@@ -1,0 +1,66 @@
+{
+  "expo": {
+    "name": "AutoReparis OS",
+    "slug": "autoreparis-os",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "thermalintergalactic",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.autoreparis.os",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "AutoReparis OS a besoin d'accéder à la caméra pour scanner les VINs, les plaques d'immatriculation et prendre des photos des réparations.",
+          "microphonePermission": "AutoReparis OS a besoin d'accéder au microphone pour enregistrer des vidéos des réparations."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "AutoReparis OS a besoin d'accéder à vos photos pour joindre des images existantes aux fiches d'intervention."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0b581839-8087-40bd-8b09-511591c249e0"
+      }
+    }
+  }
+}
