@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.autoreparis.os",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDevelopmentRegion": "fr"
       }
     },
     "android": {
@@ -42,7 +43,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "AutoReparis OS a besoin d'accéder à la caméra pour scanner les VINs, les plaques d'immatriculation et prendre des photos des réparations.",
+          "cameraPermission": "AutoReparis OS utilise la caméra pour scanner les codes-barres des pièces détachées afin de gérer le stock, et pour prendre des photos des réparations. AutoReparis OS a besoin de votre autorisation",
           "microphonePermission": "AutoReparis OS a besoin d'accéder au microphone pour enregistrer des vidéos des réparations."
         }
       ],
