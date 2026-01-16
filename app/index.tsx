@@ -1,4 +1,4 @@
-import { Image, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import { Image, Text, TouchableOpacity, View, ScrollView, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Car, Wrench, ArrowRight, Lock, Phone, ShieldCheck, MapPin } from 'lucide-react-native';
@@ -103,19 +103,23 @@ export default function PublicHomeScreen() {
 
                     {/* Footer Contact */}
                     <View className="px-6 mt-8 mb-8">
-                        <View className="bg-slate-900 rounded-2xl p-5 flex-row items-center border border-slate-800">
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => Linking.openURL('tel:0974999957')}
+                            className="bg-slate-900 rounded-2xl p-5 flex-row items-center border border-slate-800"
+                        >
                             <View className="w-10 h-10 bg-slate-800 rounded-full items-center justify-center mr-4">
                                 <Phone size={20} color="#94a3b8" />
                             </View>
                             <View className="flex-1">
                                 <Text className="text-white font-bold">Besoin d'un rendez-vous ?</Text>
-                                <Text className="text-slate-400 text-sm">Appelez-nous directement</Text>
+                                <Text className="text-slate-400 text-sm">Appelez-nous au 09 74 99 99 57</Text>
                             </View>
                             <ArrowRight size={16} color="#475569" />
-                        </View>
+                        </TouchableOpacity>
                         <View className="mt-4 flex-row items-center justify-center">
                             <MapPin size={14} color="#64748b" className="mr-1" />
-                            <Text className="text-slate-500 text-xs">Montargis, France</Text>
+                            <Text className="text-slate-500 text-xs">35 Rue du Bon Houdart, 93700 Drancy</Text>
                         </View>
                     </View>
 
