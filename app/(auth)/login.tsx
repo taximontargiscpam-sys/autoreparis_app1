@@ -92,14 +92,12 @@ export default function LoginScreen() {
                 </View>
 
                 {/* PUBLIC TRACKING LINK - APP STORE REQUIREMENT */}
+                {/* Back to Home Link */}
                 <TouchableOpacity
                     className="mt-8 flex-row items-center justify-center space-x-2"
-                    onPress={() => router.push('/public/search')}
+                    onPress={() => router.replace('/')}
                 >
-                    <View className="bg-slate-200 dark:bg-slate-800 px-4 py-2 rounded-full flex-row items-center border border-slate-300 dark:border-slate-700">
-                        <Text className="text-slate-600 dark:text-slate-400 font-semibold mr-2">Client ? Suivre mon véhicule</Text>
-                        {/* We can use an icon here if needed */}
-                    </View>
+                    <Text className="text-slate-500 dark:text-slate-500 text-sm">Retour à l'accueil</Text>
                 </TouchableOpacity>
 
 
