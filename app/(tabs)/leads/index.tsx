@@ -21,7 +21,7 @@ export default function LeadsScreen() {
 
         const subscription = supabaseWebsite
             .channel('leads_realtime_devis')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'devis_auto' }, (playload) => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'devis_auto' }, (_payload) => {
                 fetchLeads(); // Simple refresh for now
             })
             .subscribe();
@@ -69,7 +69,7 @@ export default function LeadsScreen() {
     };
 
 
-    const renderRightActions = (progress: any, dragX: any, id: string) => {
+    const renderRightActions = (_progress: any, _dragX: any, id: string) => {
         return (
             <TouchableOpacity
                 onPress={() => handleArchive(id)}

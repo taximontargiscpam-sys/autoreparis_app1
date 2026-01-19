@@ -114,7 +114,7 @@ export default function GarageProfileScreen() {
     };
 
 
-    const renderRightActions = (progress: any, dragX: any, member: any) => {
+    const renderRightActions = (_progress: any, _dragX: any, member: any) => {
         return (
             <TouchableOpacity
                 onPress={() => handleDeleteMember(member)}

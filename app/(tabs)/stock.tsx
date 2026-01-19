@@ -76,7 +76,7 @@ export default function StockScreen() {
     };
 
 
-    const renderRightActions = (progress: any, dragX: any, id: string, nom: string) => {
+    const renderRightActions = (_progress: any, _dragX: any, id: string, nom: string) => {
         return (
             <TouchableOpacity
                 onPress={() => handleDelete(id, nom)}

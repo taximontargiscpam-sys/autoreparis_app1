@@ -67,7 +67,7 @@ export default function InterventionsScreen() {
     };
 
 
-    const renderRightActions = (progress: any, dragX: any, id: string) => {
+    const renderRightActions = (_progress: any, _dragX: any, id: string) => {
         return (
             <TouchableOpacity
                 onPress={() => handleDelete(id)}
