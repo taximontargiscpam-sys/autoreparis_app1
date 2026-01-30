@@ -41,7 +41,6 @@ export default function LeadsScreen() {
         }
 
         if (data) {
-            console.log("Received Leads:", data[0]);
             setLeads(data);
         }
         setLoading(false);

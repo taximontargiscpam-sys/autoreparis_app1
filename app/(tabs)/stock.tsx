@@ -28,33 +28,7 @@ export default function StockScreen() {
 
         if (error) console.error(error);
 
-        let fetchedData = data || [];
-
-        // Fallback Dummy Data if empty
-        if (fetchedData.length === 0) {
-            fetchedData = [
-                // Entretien
-                { id: 'd1', nom: 'Filtre à Huile Bosch', categorie: 'Entretien', stock_actuel: 15, stock_min: 5, prix_vente_unitaire: 12.90, reference_fournisseur: 'F-001-B' },
-                { id: 'd5', nom: 'Huile Castrol 5W30 (5L)', categorie: 'Entretien', stock_actuel: 10, stock_min: 5, prix_vente_unitaire: 59.90, reference_fournisseur: 'C-5W30' },
-                { id: 'd10', nom: 'Liquide Refroidissement -30°C', categorie: 'Entretien', stock_actuel: 8, stock_min: 4, prix_vente_unitaire: 14.50, reference_fournisseur: 'L-COOL' },
-
-                // Pneus
-                { id: 'd2', nom: 'Pneus Michelin 205/55 R16', categorie: 'Pneus', stock_actuel: 4, stock_min: 8, prix_vente_unitaire: 89.00, reference_fournisseur: 'M-205-55' },
-
-                // Mécanique
-                { id: 'd3', nom: 'Plaquettes de Frein Brembo', categorie: 'Mécanique', stock_actuel: 2, stock_min: 2, prix_vente_unitaire: 45.50, reference_fournisseur: 'BR-999' },
-                { id: 'd8', nom: 'Amortisseurs Arrière (Paire)', categorie: 'Mécanique', stock_actuel: 1, stock_min: 2, prix_vente_unitaire: 110.00, reference_fournisseur: 'AM-RR-02' },
-                { id: 'd9', nom: 'Kit Embrayage Valeo', categorie: 'Mécanique', stock_actuel: 0, stock_min: 1, prix_vente_unitaire: 230.00, reference_fournisseur: 'KB-VAL' },
-
-                // Batterie
-                { id: 'd4', nom: 'Batterie Varta 12V 70Ah', categorie: 'Batterie', stock_actuel: 3, stock_min: 2, prix_vente_unitaire: 120.00, reference_fournisseur: 'V-70AH' },
-
-                // Carrosserie
-                { id: 'd6', nom: 'Pare-Choc Avant (Peinture à faire)', categorie: 'Carrosserie', stock_actuel: 1, stock_min: 1, prix_vente_unitaire: 180.00, reference_fournisseur: 'PC-AV-01' },
-                { id: 'd7', nom: 'Phare LED Avant Droit', categorie: 'Carrosserie', stock_actuel: 0, stock_min: 1, prix_vente_unitaire: 350.00, reference_fournisseur: 'PH-LED-R' },
-            ];
-        }
-
+        const fetchedData = data || [];
         setProducts(fetchedData);
         setLoading(false);
         setRefreshing(false);

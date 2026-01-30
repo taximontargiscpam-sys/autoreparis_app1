@@ -29,63 +29,13 @@ export default function InterventionDetailScreen() {
 
     const fetchUsers = async () => {
         const { data } = await supabase.from('users').select('*').eq('actif', true).order('nom');
-        if (data && data.length > 0) {
+        if (data) {
             setUsers(data);
-        } else {
-            setUsers([
-                { id: 'u1', prenom: 'Thomas', nom: 'Dubois', actif: true },
-                { id: 'u2', prenom: 'Sarah', nom: 'Martin', actif: true },
-                { id: 'u3', prenom: 'Marc', nom: 'Petit', actif: true },
-            ]);
         }
     };
 
     const fetchInterventionDetails = async () => {
         setLoading(true);
-
-        // Dummy Data Fallback for Demo
-        const dummyData: any = {
-            'dummy1': {
-                id: 'dummy1',
-                statut: 'planifiee',
-                date_heure_debut_prevue: new Date().setHours(9, 0),
-                type_intervention: 'Entretien',
-                commentaire: 'Révision des 30 000km + Filtres',
-                clients: { nom: 'Dupont', prenom: 'Jean', telephone: '06 12 34 56 78', email: 'jean.dupont@email.com' },
-                vehicles: { marque: 'Peugeot', modele: '308', immatriculation: 'AB-123-CD' },
-                mecanicien: null
-            },
-            'dummy2': {
-                id: 'dummy2',
-                statut: 'en_cours',
-                date_heure_debut_prevue: new Date().setHours(10, 30),
-                type_intervention: 'Mécanique',
-                commentaire: 'Bruit suspect freinage avant droit',
-                clients: { nom: 'Durand', prenom: 'Marie', telephone: '07 98 76 54 32', email: 'm.durand@email.com' },
-                vehicles: { marque: 'Renault', modele: 'Clio V', immatriculation: 'EF-456-GH' },
-                mecanicien: { id: 'u1', prenom: 'Thomas', nom: 'Dubois' }
-            },
-            'dummy5': {
-                id: 'dummy5',
-                statut: 'planifiee',
-                date_heure_debut_prevue: new Date().setHours(11, 0),
-                type_intervention: 'Pneus',
-                commentaire: 'Changement 2 pneus avant + Équilibrage. Pneu crevé.',
-                clients: { nom: 'Martin', prenom: 'Luc', telephone: '06 11 22 33 44', email: 'urgence@pneu.com' },
-                vehicles: { marque: 'Ford', modele: 'Fiesta', immatriculation: 'XY-999-ZZ' },
-                mecanicien: null
-            }
-        };
-
-        const idStr = Array.isArray(id) ? id[0] : id;
-        if (idStr && dummyData[idStr]) {
-            // Simulate network delay for realism
-            setTimeout(() => {
-                setIntervention(dummyData[idStr]);
-                setLoading(false);
-            }, 300);
-            return;
-        }
 
         const { data, error } = await supabase
             .from('interventions')
@@ -109,21 +59,6 @@ export default function InterventionDetailScreen() {
     };
 
     const updateMechanic = async (userId: string) => {
-        // Handle Dummy Data
-        const idStr = Array.isArray(id) ? id[0] : id;
-        if (idStr && idStr.startsWith('dummy')) {
-            const selectedUser = users.find(u => u.id === userId);
-            if (selectedUser) {
-                setIntervention((prev: any) => ({
-                    ...prev,
-                    mecanicien: selectedUser,
-                    mecanicien_id: userId
-                }));
-            }
-            setShowMechanicModal(false);
-            return;
-        }
-
         const { error } = await supabase
             .from('interventions')
             .update({ mecanicien_id: userId })

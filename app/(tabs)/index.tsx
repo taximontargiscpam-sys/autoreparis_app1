@@ -31,11 +31,22 @@ export default function DashboardScreen() {
     // 3. Count New Leads
     const { count: lCount } = await supabase.from('leads_site_web').select('*', { count: 'exact', head: true }).eq('statut', 'nouveau');
 
+    // Fetch actual weekly revenue
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const { data: revenueData } = await supabase
+      .from('interventions')
+      .select('total_vente')
+      .in('statut', ['terminee', 'facturee'])
+      .gte('created_at', weekAgo.toISOString());
+
+    const weeklyRevenue = revenueData?.reduce((acc, curr) => acc + (curr.total_vente || 0), 0) || 0;
+
     setStats({
       interventionsCount: iCount || 0,
       leadsCount: lCount || 0,
       stockLowCount: sCount || 0,
-      revenue: 12450 // Mocked value
+      revenue: weeklyRevenue
     });
     setLoading(false);
     setRefreshing(false);

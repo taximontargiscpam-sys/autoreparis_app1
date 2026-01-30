@@ -24,13 +24,13 @@ export default function ClientLoginScreen() {
             .ilike('immatriculation', plate.trim());
 
         if (vError) {
-            Alert.alert('Erreur Recherche Véhicule', JSON.stringify(vError));
+            Alert.alert('Erreur', 'Une erreur est survenue lors de la recherche. Veuillez réessayer.');
             setLoading(false);
             return;
         }
 
         if (!vehicles || vehicles.length === 0) {
-            Alert.alert('Introuvable', `Aucun véhicule trouvé pour ${plate.trim()}. Êtes-vous sûr d'avoir injecté les données de démo depuis l'Espace Pro ?`);
+            Alert.alert('Introuvable', `Aucun véhicule trouvé pour la plaque ${plate.trim()}. Vérifiez l'immatriculation et réessayez.`);
             setLoading(false);
             return;
         }
@@ -55,7 +55,7 @@ export default function ClientLoginScreen() {
         }
 
         if (!validIntervention) {
-            Alert.alert('Info', 'Ce véhicule existe, mais aucune intervention n\'est enregistrée (Véhicules orphelins trouvés).');
+            Alert.alert('Information', 'Aucune intervention en cours n\'est associée à ce véhicule.');
             setLoading(false);
             return;
         }

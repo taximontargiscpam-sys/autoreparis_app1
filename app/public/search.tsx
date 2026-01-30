@@ -34,7 +34,7 @@ export default function PublicSearchScreen() {
       // Clean input: remove spaces/hyphens, uppercase
       const cleanPlate = immatriculation.replace(/[\s-]/g, '').toUpperCase();
 
-      console.log('Searching for plate (public):', cleanPlate);
+      // Search for vehicle by plate
 
       // 1. Find vehicle ID
       const { data: vehicle, error: vehicleError } = await supabase
@@ -68,7 +68,7 @@ export default function PublicSearchScreen() {
       });
 
     } catch (err: any) {
-      console.error(err);
+      // Search error handled
       Alert.alert('Recherche', err.message || "Une erreur est survenue.");
     } finally {
       setLoading(false);

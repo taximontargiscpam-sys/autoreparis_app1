@@ -48,6 +48,7 @@ export default function RootLayout() {
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from '../components/AuthContext';
+import { useProtectedRoute } from '../components/useProtectedRoute';
 import { registerForPushNotificationsAsync, sendLocalNotification } from '../lib/notifications';
 import { supabaseWebsite } from '../lib/supabaseWebsite';
 
@@ -55,7 +56,9 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then(token => console.log('Push Token:', token));
+    registerForPushNotificationsAsync().then(_token => {
+      // Token registered for push notifications
+    });
 
     const subscription = supabaseWebsite
       .channel('global_leads_notifications')
@@ -85,7 +88,7 @@ function RootLayoutNav() {
 }
 
 function ProtectedLayout() {
-  // useProtectedRoute();
+  useProtectedRoute();
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -93,6 +96,7 @@ function ProtectedLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="portal" />
       <Stack.Screen name="tracking" />
+      <Stack.Screen name="public/search" />
       <Stack.Screen name="(auth)/login" />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       <Stack.Screen name="interventions/new" options={{ presentation: 'modal' }} />

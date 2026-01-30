@@ -54,6 +54,6 @@ export async function sendLocalNotification(title: string, body: string, data = 
             data,
             sound: true,
         },
-        trigger: null, // null means show immediately
+        trigger: null as any, // Immediate notification
     });
 }

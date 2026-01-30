@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "thermalintergalactic",
+    "scheme": "autoreparis",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -18,7 +18,14 @@
       "bundleIdentifier": "com.autoreparis.os",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "CFBundleDevelopmentRegion": "fr"
+        "CFBundleDevelopmentRegion": "fr",
+        "NSCameraUsageDescription": "AutoReparis OS utilise la caméra pour scanner les codes-barres des pièces détachées et prendre des photos des véhicules en réparation.",
+        "NSPhotoLibraryUsageDescription": "AutoReparis OS a besoin d'accéder à vos photos pour joindre des images existantes aux fiches d'intervention et documenter l'état des véhicules.",
+        "NSPhotoLibraryAddUsageDescription": "AutoReparis OS enregistre les photos des véhicules dans votre bibliothèque pour archivage.",
+        "NSMicrophoneUsageDescription": "AutoReparis OS utilise le microphone pour enregistrer des vidéos des réparations en cours.",
+        "NSUserTrackingUsageDescription": "AutoReparis OS n'effectue aucun suivi publicitaire. Cette autorisation est demandée par des composants tiers.",
+        "CFBundleLocalizations": ["fr"],
+        "NSLocationWhenInUseUsageDescription": "AutoReparis OS peut utiliser votre position pour localiser le garage le plus proche."
       }
     },
     "android": {
@@ -43,14 +50,23 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "AutoReparis OS utilise la caméra pour scanner les codes-barres des pièces détachées afin de gérer le stock, et pour prendre des photos des réparations. AutoReparis OS a besoin de votre autorisation",
-          "microphonePermission": "AutoReparis OS a besoin d'accéder au microphone pour enregistrer des vidéos des réparations."
+          "cameraPermission": "AutoReparis OS utilise la caméra pour scanner les codes-barres des pièces détachées afin de gérer le stock, et pour prendre des photos des réparations.",
+          "microphonePermission": "AutoReparis OS a besoin d'accéder au microphone pour enregistrer des vidéos des réparations.",
+          "recordAudioAndroid": true
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "AutoReparis OS a besoin d'accéder à vos photos pour joindre des images existantes aux fiches d'intervention."
+          "photosPermission": "AutoReparis OS a besoin d'accéder à vos photos pour joindre des images existantes aux fiches d'intervention.",
+          "cameraPermission": "AutoReparis OS utilise la caméra pour prendre des photos des véhicules en réparation."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#0090E7"
         }
       ]
     ],

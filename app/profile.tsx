@@ -65,22 +65,18 @@ export default function GarageProfileScreen() {
         }
 
         try {
-            const fakeId = '00000000-0000-0000-0000-' + Date.now().toString(16).padStart(12, '0');
-
             const { error } = await supabase.from('users').insert([{
-                id: fakeId,
                 nom: newUser.nom,
                 prenom: newUser.prenom,
-                email: newUser.email || `user${Date.now()}@garage.com`,
+                email: newUser.email || '',
                 role: newUser.role,
                 actif: true
             }]);
 
             if (error) {
-                console.log("Insert failed (likely FK):", error);
-                setTeam([...team, { ...newUser, id: fakeId, email: newUser.email || 'simulated@garage.com', actif: true }]);
-                Alert.alert("Note", "Utilisateur ajouté VISUELLEMENT. Pour un accès réel (Login), créez-le dans Supabase Auth.");
+                handleError(error, "Impossible d'ajouter le membre. Vérifiez la configuration de la base de données.");
             } else {
+                Alert.alert("Succès", "Membre ajouté avec succès.");
                 fetchTeam();
             }
             setShowAddModal(false);

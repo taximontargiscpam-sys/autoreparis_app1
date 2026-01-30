@@ -15,8 +15,7 @@ import { globalStore } from '../lib/store';
 // ... imports
 
 export default function TrackingScreen(props: any) {
-    // Debug Props
-    console.log('TRACKING SCREEN PROPS:', JSON.stringify(props, null, 2));
+    // Props handling
 
     const route = props.route;
 
@@ -57,11 +56,10 @@ export default function TrackingScreen(props: any) {
 
     async function fetchIntervention() {
         try {
-            console.log('Fetching intervention for ID:', id);
+            // Fetch intervention data
             const targetId = Array.isArray(id) ? id[0] : id;
 
             if (!targetId) {
-                console.error('No ID provided'); // This console.error is fine as it's a dev-time check for missing ID
                 setLoading(false);
                 return;
             }
@@ -143,8 +141,7 @@ export default function TrackingScreen(props: any) {
     if (!intervention) return (
         <SafeAreaView className="flex-1 bg-slate-900 justify-center items-center p-4">
             <Text className="text-white text-lg font-bold mb-2">Intervention introuvable</Text>
-            <Text className="text-slate-500 text-center">ID reçu: {JSON.stringify(id)}</Text>
-            <Text className="text-slate-600 text-xs mt-4 text-center">Si l'ID est vide, le problème vient de la connexion.</Text>
+            <Text className="text-slate-500 text-center">Impossible de charger les détails de cette intervention.</Text>
             <TouchableOpacity onPress={goBack} className="mt-8 bg-slate-800 px-6 py-3 rounded-full">
                 <Text className="text-white font-bold">Retour</Text>
             </TouchableOpacity>

@@ -13,12 +13,17 @@ export function useProtectedRoute() {
         const inAuthGroup = segments[0] === '(auth)';
         const inPortalGroup = segments[0] === 'portal';
         const isTrackingPage = segments[0] === 'tracking';
+        const isPublicPage = segments[0] === 'public';
+        const isHomePage = segments.length === 0 || (segments.length === 1 && segments[0] === 'index');
 
-        if (!session && !inAuthGroup && !inPortalGroup && !isTrackingPage) {
-            // Redirect to the portal (public entry point)
-            router.replace('/portal');
+        // Public routes: home, portal, tracking, public/*, auth
+        const isPublicRoute = inAuthGroup || inPortalGroup || isTrackingPage || isPublicPage || isHomePage;
+
+        if (!session && !isPublicRoute) {
+            // Redirect unauthenticated users away from protected routes
+            router.replace('/');
         } else if (session && inAuthGroup) {
-            // Redirect away from the sign-in page.
+            // Redirect authenticated users away from the sign-in page
             router.replace('/(tabs)');
         }
     }, [session, segments, isLoading]);
