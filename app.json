@@ -24,7 +24,9 @@
         "NSPhotoLibraryAddUsageDescription": "AutoReparis OS enregistre les photos des véhicules dans votre bibliothèque pour archivage.",
         "NSMicrophoneUsageDescription": "AutoReparis OS utilise le microphone pour enregistrer des vidéos des réparations en cours.",
         "NSUserTrackingUsageDescription": "AutoReparis OS n'effectue aucun suivi publicitaire. Cette autorisation est demandée par des composants tiers.",
-        "CFBundleLocalizations": ["fr"],
+        "CFBundleLocalizations": [
+          "fr"
+        ],
         "NSLocationWhenInUseUsageDescription": "AutoReparis OS peut utiliser votre position pour localiser le garage le plus proche."
       }
     },
@@ -76,8 +78,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "0b581839-8087-40bd-8b09-511591c249e0"
+        "projectId": "03de1918-cbdf-41ee-9be5-52a67049e184"
       }
-    }
+    },
+    "owner": "mimir"
   }
 }
