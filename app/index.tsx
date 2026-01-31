@@ -133,11 +133,11 @@ export default function PublicHomeScreen() {
 
                     {/* Legal Links - Required by Apple */}
                     <View className="flex-row justify-center items-center mb-6 gap-4">
-                        <TouchableOpacity onPress={() => Linking.openURL('https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html')}>
+                        <TouchableOpacity onPress={() => Linking.openURL('https://autoreparis-legal.vercel.app/politique-de-confidentialite.html')}>
                             <Text className="text-slate-600 text-[10px] underline">Politique de confidentialité</Text>
                         </TouchableOpacity>
                         <Text className="text-slate-700 text-[10px]">•</Text>
-                        <TouchableOpacity onPress={() => Linking.openURL('https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html')}>
+                        <TouchableOpacity onPress={() => Linking.openURL('https://autoreparis-legal.vercel.app/conditions-utilisation.html')}>
                             <Text className="text-slate-600 text-[10px] underline">Conditions d'utilisation</Text>
                         </TouchableOpacity>
                     </View>
