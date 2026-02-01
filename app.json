@@ -23,7 +23,6 @@
         "NSPhotoLibraryUsageDescription": "AutoReparis OS a besoin d'accéder à vos photos pour joindre des images existantes aux fiches d'intervention et documenter l'état des véhicules.",
         "NSPhotoLibraryAddUsageDescription": "AutoReparis OS enregistre les photos des véhicules dans votre bibliothèque pour archivage.",
         "NSMicrophoneUsageDescription": "AutoReparis OS utilise le microphone pour enregistrer des vidéos des réparations en cours.",
-        "NSUserTrackingUsageDescription": "AutoReparis OS n'effectue aucun suivi publicitaire. Cette autorisation est demandée par des composants tiers.",
         "CFBundleLocalizations": [
           "fr"
         ],
