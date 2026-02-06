@@ -1,41 +1,91 @@
 import { supabase } from '@/lib/supabase';
+import type { InterventionWithRelations, VehiclePhoto } from '@/lib/database.types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Image as LucideImage, Trash2 } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
-export default function InterventionPhotos({ intervention }: any) {
-    const [photos, setPhotos] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [uploading, setUploading] = useState(false);
+interface InterventionPhotosProps {
+    intervention: InterventionWithRelations;
+}
 
+export default function InterventionPhotos({ intervention }: InterventionPhotosProps) {
+    const queryClient = useQueryClient();
+    const channelRef = useRef<RealtimeChannel | null>(null);
+    const isDummy = intervention.id.toString().startsWith('dummy');
+
+    // --- React Query: fetch photos ---
+    const { data: photos = [], isLoading, refetch } = useQuery<VehiclePhoto[]>({
+        queryKey: ['intervention-photos', intervention.id],
+        enabled: !isDummy,
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('vehicle_photos')
+                .select('*')
+                .eq('intervention_id', intervention.id)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data as VehiclePhoto[];
+        },
+    });
+
+    // --- Realtime subscription (triggers refetch) ---
     useEffect(() => {
-        fetchPhotos();
-        const subscription = supabase
+        if (isDummy) return;
+
+        channelRef.current = supabase
             .channel(`photos-${intervention.id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'vehicle_photos', filter: `intervention_id=eq.${intervention.id}` }, fetchPhotos)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'vehicle_photos',
+                    filter: `intervention_id=eq.${intervention.id}`,
+                },
+                () => { refetch(); }
+            )
             .subscribe();
 
-        return () => { subscription.unsubscribe(); };
-    }, [intervention.id]);
+        return () => {
+            channelRef.current?.unsubscribe();
+            channelRef.current = null;
+        };
+    }, [intervention.id, isDummy, refetch]);
 
-    const fetchPhotos = async () => {
-        // Dummy Handling
-        if (intervention.id.toString().startsWith('dummy')) {
-            setLoading(false);
-            return;
-        }
+    // --- Mutation: upload photo ---
+    const uploadMutation = useMutation({
+        mutationFn: async (uri: string) => {
+            const { error } = await supabase.from('vehicle_photos').insert([{
+                intervention_id: intervention.id,
+                url_image: uri,
+                type: 'photo_constat',
+                commentaire: 'Ajouté depuis l\'app',
+            }]);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['intervention-photos', intervention.id] });
+        },
+        onError: () => {
+            Alert.alert('Erreur', 'Impossible de sauvegarder la photo');
+        },
+    });
 
-        const { data, error } = await supabase
-            .from('vehicle_photos')
-            .select('*')
-            .eq('intervention_id', intervention.id)
-            .order('created_at', { ascending: false });
+    // --- Mutation: delete photo ---
+    const deleteMutation = useMutation({
+        mutationFn: async (photoId: string) => {
+            const { error } = await supabase.from('vehicle_photos').delete().eq('id', photoId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['intervention-photos', intervention.id] });
+        },
+    });
 
-        if (error) console.error(error);
-        else setPhotos(data || []);
-        setLoading(false);
-    };
+    const uploading = uploadMutation.isPending;
 
     const pickImage = async () => {
         // No permissions request is necessary for launching the image library
@@ -44,7 +94,9 @@ export default function InterventionPhotos({ intervention }: any) {
             allowsEditing: true,
             aspect: [4, 3],
             quality: 0.5,
-        });
+            maxWidth: 1200,
+            maxHeight: 1200,
+        } as ImagePicker.ImagePickerOptions);
 
         if (!result.canceled) {
             handleUpload(result.assets[0].uri);
@@ -62,7 +114,9 @@ export default function InterventionPhotos({ intervention }: any) {
             allowsEditing: true,
             aspect: [4, 3],
             quality: 0.5,
-        });
+            maxWidth: 1200,
+            maxHeight: 1200,
+        } as ImagePicker.ImagePickerOptions);
 
         if (!result.canceled) {
             handleUpload(result.assets[0].uri);
@@ -70,43 +124,25 @@ export default function InterventionPhotos({ intervention }: any) {
     };
 
     const handleUpload = async (uri: string) => {
-        setUploading(true);
-
         // Dummy Handling
-        if (intervention.id.toString().startsWith('dummy')) {
-            const newPhoto = {
+        if (isDummy) {
+            // For dummy mode we optimistically add to query cache
+            const newPhoto: VehiclePhoto = {
                 id: Math.random().toString(),
                 intervention_id: intervention.id,
                 url_image: uri,
                 type: 'photo_constat',
                 commentaire: 'Ajouté depuis l\'app',
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
             };
-            // Simulate delay
-            setTimeout(() => {
-                setPhotos([newPhoto, ...photos]);
-                setUploading(false);
-            }, 500);
+            queryClient.setQueryData<VehiclePhoto[]>(
+                ['intervention-photos', intervention.id],
+                (old = []) => [newPhoto, ...old]
+            );
             return;
         }
 
-        // SIMULATED UPLOAD: In a real app, we would upload the file to Supabase Storage here.
-        // For this demo, we save the local URI (Works on same device) or use a placeholder if needed.
-        // We'll trust the local URI for the demo.
-
-        const { error } = await supabase.from('vehicle_photos').insert([{
-            intervention_id: intervention.id,
-            url_image: uri,
-            type: 'photo_constat',
-            commentaire: 'Ajouté depuis l\'app'
-        }]);
-
-        if (error) {
-            Alert.alert('Erreur', 'Impossible de sauvegarder la photo');
-            console.error(error);
-        }
-
-        setUploading(false);
+        uploadMutation.mutate(uri);
     };
 
     const handleDelete = async (id: string) => {
@@ -115,16 +151,19 @@ export default function InterventionPhotos({ intervention }: any) {
             {
                 text: 'Supprimer',
                 style: 'destructive',
-                onPress: async () => {
+                onPress: () => {
                     // Dummy Handling
-                    if (intervention.id.toString().startsWith('dummy')) {
-                        setPhotos(photos.filter(p => p.id !== id));
+                    if (isDummy) {
+                        queryClient.setQueryData<VehiclePhoto[]>(
+                            ['intervention-photos', intervention.id],
+                            (old = []) => old.filter(p => p.id !== id)
+                        );
                         return;
                     }
 
-                    await supabase.from('vehicle_photos').delete().eq('id', id);
-                }
-            }
+                    deleteMutation.mutate(id);
+                },
+            },
         ]);
     };
 
@@ -135,7 +174,7 @@ export default function InterventionPhotos({ intervention }: any) {
                 <Text className="text-slate-500 text-sm">{photos.length} photos</Text>
             </View>
 
-            {loading ? (
+            {isLoading ? (
                 <ActivityIndicator />
             ) : (
                 <View className="flex-row flex-wrap justify-between">
@@ -160,7 +199,7 @@ export default function InterventionPhotos({ intervention }: any) {
                 </View>
             )}
 
-            {!loading && photos.length === 0 && (
+            {!isLoading && photos.length === 0 && (
                 <View className="items-center py-10 opacity-50">
                     <Camera size={48} color="#cbd5e1" />
                     <Text className="text-slate-500 mt-4 text-center">Aucune photo pour le moment.</Text>

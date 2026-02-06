@@ -1,99 +1,178 @@
 import { supabase } from '@/lib/supabase';
+import type { InterventionWithRelations, InterventionLine } from '@/lib/database.types';
+import { interventionLineSchema, getValidationError } from '@/lib/validations';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PenTool, Plus, Trash2, Wrench } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
-export default function InterventionParts({ intervention }: any) {
-    const [lines, setLines] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+interface InterventionPartsProps {
+    intervention: InterventionWithRelations;
+}
+
+export default function InterventionParts({ intervention }: InterventionPartsProps) {
+    const queryClient = useQueryClient();
+    const channelRef = useRef<RealtimeChannel | null>(null);
+    const isDummy = intervention.id.toString().startsWith('dummy');
     const [modalVisible, setModalVisible] = useState(false);
 
     // Form State
     const [newLine, setNewLine] = useState({
-        type_ligne: 'piece',
+        type_ligne: 'piece' as const,
         description: '',
         quantite: '1',
-        prix_vente_unitaire: ''
+        prix_vente_unitaire: '',
     });
 
-    useEffect(() => {
-        fetchLines();
+    // --- React Query: fetch lines ---
+    const { data: lines = [], isLoading, refetch } = useQuery<InterventionLine[]>({
+        queryKey: ['intervention-lines', intervention.id],
+        enabled: !isDummy,
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('intervention_lines')
+                .select('*')
+                .eq('intervention_id', intervention.id);
+            if (error) throw error;
+            return data as InterventionLine[];
+        },
+    });
 
-        // Realtime subscription for this intervention's lines
-        const subscription = supabase
+    // --- Realtime subscription (triggers refetch) ---
+    useEffect(() => {
+        if (isDummy) return;
+
+        channelRef.current = supabase
             .channel(`lines-${intervention.id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'intervention_lines', filter: `intervention_id=eq.${intervention.id}` }, fetchLines)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'intervention_lines',
+                    filter: `intervention_id=eq.${intervention.id}`,
+                },
+                () => { refetch(); }
+            )
             .subscribe();
 
-        return () => { subscription.unsubscribe(); };
-    }, [intervention.id]);
+        return () => {
+            channelRef.current?.unsubscribe();
+            channelRef.current = null;
+        };
+    }, [intervention.id, isDummy, refetch]);
 
-    const fetchLines = async () => {
-        // Dummy data handling
-        if (intervention.id.toString().startsWith('dummy')) {
-            // For demo purposes, we could pre-fill some lines for specific dummies if we wanted
-            // But for now, we just avoid the API call error
-            setLoading(false);
-            return;
-        }
+    // --- Mutation: add line ---
+    const addLineMutation = useMutation({
+        mutationFn: async (lineData: {
+            type_ligne: string;
+            description: string;
+            quantite: number;
+            prix_vente_unitaire: number;
+            prix_achat_unitaire: number;
+        }) => {
+            const { error } = await supabase.from('intervention_lines').insert([{
+                intervention_id: intervention.id,
+                ...lineData,
+            }]);
+            if (error) throw error;
+        },
+        onSuccess: async () => {
+            // Recalculate totals server-side
+            await supabase.rpc('recalculate_intervention_totals', {
+                p_intervention_id: intervention.id,
+            });
+            queryClient.invalidateQueries({ queryKey: ['intervention-lines', intervention.id] });
+            queryClient.invalidateQueries({ queryKey: ['intervention', intervention.id] });
+            queryClient.invalidateQueries({ queryKey: ['interventions'] });
+        },
+        onError: () => {
+            Alert.alert('Erreur', 'Impossible d\'ajouter la ligne');
+        },
+    });
 
-        const { data, error } = await supabase
-            .from('intervention_lines')
-            .select('*')
-            .eq('intervention_id', intervention.id);
+    // --- Mutation: delete line ---
+    const deleteLineMutation = useMutation({
+        mutationFn: async (lineId: string) => {
+            const { error } = await supabase.from('intervention_lines').delete().eq('id', lineId);
+            if (error) throw error;
+        },
+        onSuccess: async () => {
+            // Recalculate totals server-side
+            await supabase.rpc('recalculate_intervention_totals', {
+                p_intervention_id: intervention.id,
+            });
+            queryClient.invalidateQueries({ queryKey: ['intervention-lines', intervention.id] });
+            queryClient.invalidateQueries({ queryKey: ['intervention', intervention.id] });
+            queryClient.invalidateQueries({ queryKey: ['interventions'] });
+        },
+    });
 
-        if (error) console.error(error);
-        else setLines(data || []);
-        setLoading(false);
+    const resetForm = () => {
+        setNewLine({ type_ligne: 'piece', description: '', quantite: '1', prix_vente_unitaire: '' });
     };
 
     const handleAddLine = async () => {
-        if (!newLine.description || !newLine.prix_vente_unitaire) {
-            Alert.alert('Erreur', 'Veuillez remplir la description et le prix.');
-            return;
-        }
+        // Parse numeric values for validation
+        const parsedQuantite = parseFloat(newLine.quantite.replace(',', '.'));
+        const parsedPrix = parseFloat(newLine.prix_vente_unitaire.replace(',', '.'));
 
-        // Dummy Data Handling
-        if (intervention.id.toString().startsWith('dummy')) {
-            const dummyLine = {
-                id: Math.random().toString(),
-                intervention_id: intervention.id,
-                type_ligne: newLine.type_ligne,
-                description: newLine.description,
-                quantite: parseFloat(newLine.quantite.replace(',', '.')),
-                prix_vente_unitaire: parseFloat(newLine.prix_vente_unitaire.replace(',', '.')),
-                prix_achat_unitaire: 0
-            };
-            setLines([...lines, dummyLine]);
-            setModalVisible(false);
-            setNewLine({ type_ligne: 'piece', description: '', quantite: '1', prix_vente_unitaire: '' });
-            return;
-        }
-
-        const { error } = await supabase.from('intervention_lines').insert([{
-            intervention_id: intervention.id,
+        // Zod validation
+        const result = interventionLineSchema.safeParse({
             type_ligne: newLine.type_ligne,
             description: newLine.description,
-            quantite: parseFloat(newLine.quantite.replace(',', '.')),
-            prix_vente_unitaire: parseFloat(newLine.prix_vente_unitaire.replace(',', '.')),
-            prix_achat_unitaire: 0 // Default for now
-        }]);
+            quantite: isNaN(parsedQuantite) ? 0 : parsedQuantite,
+            prix_vente_unitaire: isNaN(parsedPrix) ? -1 : parsedPrix,
+            prix_achat_unitaire: 0,
+        });
 
-        if (error) {
-            Alert.alert('Erreur', 'Impossible d\'ajouter la ligne');
-            console.error(error);
-        } else {
-            setModalVisible(false);
-            setNewLine({ type_ligne: 'piece', description: '', quantite: '1', prix_vente_unitaire: '' });
-            // Update parent total (Quick dirty fix, ideally DB trigger or separate update)
-            updateParentTotal();
+        const validationError = getValidationError(result);
+        if (validationError) {
+            Alert.alert('Erreur de validation', validationError);
+            return;
         }
-    };
 
-    const updateParentTotal = async () => {
-        // Calculate new total locally or fetch? Fetching lines again inside fetchLines will get them, but we need to sum them
-        // Let's just trigger a re-calc on the server side or blindly update local for now.
-        // For V1, let's just let the UI refresh. The Total on the summary might trail behind unless we force update it.
+        const validated = result.data!;
+
+        // Dummy Data Handling
+        if (isDummy) {
+            const dummyLine: InterventionLine = {
+                id: Math.random().toString(),
+                intervention_id: intervention.id,
+                type_ligne: validated.type_ligne,
+                description: validated.description,
+                quantite: validated.quantite,
+                prix_vente_unitaire: validated.prix_vente_unitaire,
+                prix_achat_unitaire: validated.prix_achat_unitaire ?? 0,
+                product_id: null,
+                total_achat_ligne: 0,
+                total_vente_ligne: validated.quantite * validated.prix_vente_unitaire,
+            };
+            queryClient.setQueryData<InterventionLine[]>(
+                ['intervention-lines', intervention.id],
+                (old = []) => [...old, dummyLine]
+            );
+            setModalVisible(false);
+            resetForm();
+            return;
+        }
+
+        addLineMutation.mutate(
+            {
+                type_ligne: validated.type_ligne,
+                description: validated.description,
+                quantite: validated.quantite,
+                prix_vente_unitaire: validated.prix_vente_unitaire,
+                prix_achat_unitaire: validated.prix_achat_unitaire ?? 0,
+            },
+            {
+                onSuccess: () => {
+                    setModalVisible(false);
+                    resetForm();
+                },
+            }
+        );
     };
 
     const handleDelete = async (id: string) => {
@@ -102,21 +181,23 @@ export default function InterventionParts({ intervention }: any) {
             {
                 text: 'Supprimer',
                 style: 'destructive',
-                onPress: async () => {
+                onPress: () => {
                     // Dummy Data Handling
-                    if (intervention.id.toString().startsWith('dummy')) {
-                        setLines(lines.filter(l => l.id !== id));
+                    if (isDummy) {
+                        queryClient.setQueryData<InterventionLine[]>(
+                            ['intervention-lines', intervention.id],
+                            (old = []) => old.filter(l => l.id !== id)
+                        );
                         return;
                     }
 
-                    await supabase.from('intervention_lines').delete().eq('id', id);
-                    updateParentTotal();
-                }
-            }
+                    deleteLineMutation.mutate(id);
+                },
+            },
         ]);
     };
 
-    const renderLineItem = (item: any) => (
+    const renderLineItem = (item: InterventionLine) => (
         <View key={item.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl mb-3 flex-row items-center justify-between border border-slate-100 dark:border-slate-700">
             <View className="flex-row items-center flex-1">
                 <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${item.type_ligne === 'piece' ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-purple-100 dark:bg-purple-900/30'}`}>
@@ -144,11 +225,11 @@ export default function InterventionParts({ intervention }: any) {
                     <Text className="text-slate-500 text-sm">{lines.length} lignes</Text>
                 </View>
 
-                {loading ? <ActivityIndicator /> : lines.map(renderLineItem)}
+                {isLoading ? <ActivityIndicator /> : lines.map(renderLineItem)}
 
-                {lines.length === 0 && !loading && (
+                {lines.length === 0 && !isLoading && (
                     <View className="items-center py-10 opacity-50">
-                        <Text className="text-slate-500">Aucune pièce ou main d'œuvre ajoutée.</Text>
+                        <Text className="text-slate-500">Aucune pièce ou main d'oeuvre ajoutée.</Text>
                     </View>
                 )}
 
@@ -234,9 +315,14 @@ export default function InterventionParts({ intervention }: any) {
 
                             <TouchableOpacity
                                 onPress={handleAddLine}
+                                disabled={addLineMutation.isPending}
                                 className="bg-blue-600 h-14 rounded-xl items-center justify-center shadow-lg shadow-blue-500/30 mb-8"
                             >
-                                <Text className="text-white font-bold text-lg">Valider</Text>
+                                {addLineMutation.isPending ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <Text className="text-white font-bold text-lg">Valider</Text>
+                                )}
                             </TouchableOpacity>
                         </ScrollView>
                     </KeyboardAvoidingView>

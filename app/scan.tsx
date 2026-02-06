@@ -1,16 +1,78 @@
-import { supabase } from '@/lib/supabase';
+import { useProductByBarcode, useUpdateStock } from '@/lib/hooks/useProducts';
+import type { Product } from '@/lib/database.types';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { Box, Check, Info, Plus, X } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+type ScanResult = {
+    type: 'found' | 'unknown';
+    product: Product | null;
+    code: string;
+};
 
 export default function CameraScreen() {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [scanResult, setScanResult] = useState<any>(null); // { type: 'found' | 'unknown', data: any, code: string }
+    const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+    const [scannedCode, setScannedCode] = useState<string | undefined>(undefined);
     const router = useRouter();
+
+    const { data: foundProduct, isLoading: lookupLoading } = useProductByBarcode(scannedCode);
+    const updateStock = useUpdateStock();
+
+    // When the barcode query resolves, update scanResult
+    const handleBarCodeScanned = useCallback(({ data }: { data: string }) => {
+        if (scanned) return;
+        setScanned(true);
+        setScannedCode(data);
+    }, [scanned]);
+
+    // React to query result changes: once lookup finishes, show the result panel
+    // We use a small effect-like pattern driven by state transitions
+    const isLookupDone = scannedCode !== undefined && !lookupLoading;
+    if (isLookupDone && !scanResult) {
+        if (foundProduct) {
+            setScanResult({ type: 'found', product: foundProduct, code: scannedCode! });
+        } else {
+            setScanResult({ type: 'unknown', product: null, code: scannedCode! });
+        }
+    }
+
+    const handleReset = () => {
+        setScanResult(null);
+        setScanned(false);
+        setScannedCode(undefined);
+    };
+
+    const handleStockIncrement = async () => {
+        if (!scanResult?.product) return;
+
+        const product = scanResult.product;
+        const newStock = (product.stock_actuel || 0) + 1;
+
+        try {
+            await updateStock.mutateAsync({
+                productId: product.id,
+                newStock,
+                previousStock: product.stock_actuel,
+                motif: 'Scan +1',
+            });
+
+            // Optimistic UI update for immediate feedback
+            setScanResult({
+                ...scanResult,
+                product: { ...product, stock_actuel: newStock },
+            });
+
+            Alert.alert("Succes", "+1 ajoute au stock !", [
+                { text: "OK", onPress: handleReset }
+            ]);
+        } catch {
+            Alert.alert("Erreur", "Mise a jour echouee");
+        }
+    };
 
     if (!permission) return <View />;
     if (!permission.granted) {
@@ -24,70 +86,7 @@ export default function CameraScreen() {
         );
     }
 
-    const handleBarCodeScanned = async ({ data }: any) => {
-        if (scanned || loading) return;
-        setScanned(true);
-        setLoading(true);
-
-        try {
-            const { data: product, error } = await supabase
-                .from('products')
-                .select('id, nom, stock_actuel, marque')
-                .eq('code_barres', data)
-                .maybeSingle();
-
-            if (error) {
-                // Technical error
-                Alert.alert("Erreur", error.message);
-                setScanned(false);
-                setLoading(false);
-                return;
-            }
-
-            if (product) {
-                setScanResult({ type: 'found', data: product, code: data });
-            } else {
-                setScanResult({ type: 'unknown', data: null, code: data });
-            }
-        } catch (e) {
-            setScanned(false);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleReset = () => {
-        setScanResult(null);
-        setScanned(false);
-    };
-
-    const handleStockIncrement = async () => {
-        if (!scanResult?.data) return;
-        setLoading(true);
-
-        const newStock = (scanResult.data.stock_actuel || 0) + 1;
-        const { error } = await supabase
-            .from('products')
-            .update({ stock_actuel: newStock })
-            .eq('id', scanResult.data.id);
-
-        if (error) {
-            Alert.alert("Erreur", "Mise à jour échouée");
-        } else {
-            // Optimistic update for UI feedback
-            setScanResult({
-                ...scanResult,
-                data: { ...scanResult.data, stock_actuel: newStock }
-            });
-            // Show brief success feedback then maybe close? Or keep open?
-            // User flow: Scan -> +1 -> Scan Next.
-            // Let's reset after a short delay or show success state.
-            Alert.alert("Succès", "+1 ajouté au stock !", [
-                { text: "OK", onPress: handleReset }
-            ]);
-        }
-        setLoading(false);
-    };
+    const loading = lookupLoading || updateStock.isPending;
 
     return (
         <View className="flex-1 bg-black">
@@ -107,7 +106,7 @@ export default function CameraScreen() {
             </View>
 
             {/* Target Area (Only visible when scanning) */}
-            {!scanResult && (
+            {!scanResult && !loading && (
                 <View className="flex-1 items-center justify-center">
                     <View className="w-72 h-72 border-2 border-white/50 rounded-3xl items-center justify-center">
                         <View className="w-64 h-64 rounded-2xl border border-white/20" />
@@ -135,14 +134,14 @@ export default function CameraScreen() {
                                     <Check size={24} color="#4ade80" />
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="text-white text-xl font-bold">{scanResult.data.nom}</Text>
-                                    <Text className="text-slate-400 text-sm">{scanResult.data.marque}</Text>
+                                    <Text className="text-white text-xl font-bold">{scanResult.product!.nom}</Text>
+                                    <Text className="text-slate-400 text-sm">{scanResult.product!.reference_fournisseur}</Text>
                                 </View>
                             </View>
 
                             <View className="bg-slate-800 p-4 rounded-xl mb-6 flex-row justify-between items-center">
                                 <Text className="text-slate-300">Stock Actuel</Text>
-                                <Text className="text-white text-2xl font-bold">{scanResult.data.stock_actuel}</Text>
+                                <Text className="text-white text-2xl font-bold">{scanResult.product!.stock_actuel}</Text>
                             </View>
 
                             <View className="flex-col gap-3">
@@ -155,7 +154,7 @@ export default function CameraScreen() {
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
-                                    onPress={() => router.push({ pathname: '/products/[id]', params: { id: scanResult.data.id } })}
+                                    onPress={() => router.push({ pathname: '/products/[id]', params: { id: scanResult.product!.id } })}
                                     className="bg-slate-700 h-14 rounded-xl flex-row items-center justify-center"
                                 >
                                     <Info color="white" size={20} className="mr-2" />

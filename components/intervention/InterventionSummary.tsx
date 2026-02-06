@@ -1,21 +1,31 @@
-import { supabase } from '@/lib/supabase';
+import { useUpdateInterventionStatus } from '@/lib/hooks/useInterventions';
+import type { InterventionWithRelations, InterventionStatus } from '@/lib/database.types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Calendar, Clock, Phone, User } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
-export default function InterventionSummary({ intervention, refresh }: any) {
-    const [updating, setUpdating] = useState(false);
+interface StatusButtonProps {
+    status: InterventionStatus;
+    label: string;
+    color: string;
+    current: InterventionStatus;
+}
 
-    const updateStatus = async (newStatus: string) => {
-        setUpdating(true);
+interface InterventionSummaryProps {
+    intervention: InterventionWithRelations;
+    refresh: () => void;
+}
 
+export default function InterventionSummary({ intervention, refresh }: InterventionSummaryProps) {
+    const { mutateAsync: updateStatus, isPending } = useUpdateInterventionStatus();
+
+    const handleStatusChange = async (newStatus: InterventionStatus) => {
         // Dummy Handling
         if (intervention.id.toString().startsWith('dummy')) {
             // Simulate network delay
             setTimeout(() => {
-                setUpdating(false);
                 // We call refresh, knowing it might reset to default dummy state
                 // Ideally we'd update the parent state, but this prevents the crash.
                 refresh();
@@ -23,23 +33,18 @@ export default function InterventionSummary({ intervention, refresh }: any) {
             return;
         }
 
-        const { error } = await supabase
-            .from('interventions')
-            .update({ statut: newStatus })
-            .eq('id', intervention.id);
-
-        if (error) {
-            Alert.alert('Erreur', 'Impossible de mettre à jour le statut');
-        } else {
+        try {
+            await updateStatus({ id: intervention.id, statut: newStatus });
             refresh();
+        } catch {
+            Alert.alert('Erreur', 'Impossible de mettre à jour le statut');
         }
-        setUpdating(false);
     };
 
-    const StatusButton = ({ status, label, color, current }: any) => (
+    const StatusButton = ({ status, label, color, current }: StatusButtonProps) => (
         <TouchableOpacity
-            disabled={updating}
-            onPress={() => updateStatus(status)}
+            disabled={isPending}
+            onPress={() => handleStatusChange(status)}
             className={`flex-1 py-3 items-center justify-center rounded-xl mx-1 border ${current === status ? `${color} bg-opacity-10` : 'border-slate-200 dark:border-slate-700 bg-transparent'}`}
             style={current === status ? { backgroundColor: color + '20', borderColor: color } : {}}
         >

@@ -1,6 +1,7 @@
 import { Session, User } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import type { UserRole } from '../lib/database.types';
 
 type AuthContextType = {
     session: Session | null;
@@ -8,6 +9,7 @@ type AuthContextType = {
     isAuthenticated: boolean;
     isLoading: boolean;
     isAdmin: boolean;
+    userRole: UserRole | null;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,6 +18,7 @@ const AuthContext = createContext<AuthContextType>({
     isAuthenticated: false,
     isLoading: true,
     isAdmin: false,
+    userRole: null,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -24,18 +27,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [session, setSession] = useState<Session | null>(null);
     const [sessionLoading, setSessionLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [userRole, setUserRole] = useState<UserRole | null>(null);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
-            checkUserRole(session?.user);
+            fetchUserRole(session?.user);
             setSessionLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (_event, session) => {
                 setSession(session);
-                checkUserRole(session?.user);
+                fetchUserRole(session?.user);
                 setSessionLoading(false);
             }
         );
@@ -43,19 +47,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const checkUserRole = async (user: User | undefined) => {
+    const fetchUserRole = async (user: User | undefined) => {
         if (!user) {
             setIsAdmin(false);
+            setUserRole(null);
             return;
         }
-        // In a real app, you would fetch the user role from the 'users' table
-        // For now, we'll assume everyone isn't admin unless specified or we fetch it.
-        // Let's implement a quick fetch if we can, or just leave it for later.
-        // For V1 prototype, we can check if the user metadata has a role or just fetch from public.users
 
-        // const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
-        // setIsAdmin(data?.role === 'admin');
-        setIsAdmin(false); // Placeholder
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (error || !data) {
+                setIsAdmin(false);
+                setUserRole('lecture');
+                return;
+            }
+
+            const role = data.role as UserRole;
+            setUserRole(role);
+            setIsAdmin(role === 'admin');
+        } catch {
+            setIsAdmin(false);
+            setUserRole('lecture');
+        }
     };
 
     return (
@@ -66,6 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 isAuthenticated: !!session?.user,
                 isLoading: sessionLoading,
                 isAdmin,
+                userRole,
             }}
         >
             {children}

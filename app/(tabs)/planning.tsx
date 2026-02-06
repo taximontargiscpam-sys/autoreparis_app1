@@ -1,7 +1,9 @@
-import { supabase } from '@/lib/supabase';
+import { useTeamMembers, useTeamAvailability, useUserMonthlyAvailability, useSaveAvailability } from '@/lib/hooks/useTeam';
+import { useInterventions, useAssignMechanic } from '@/lib/hooks/useInterventions';
+import type { User, TeamAvailability, InterventionWithRelations } from '@/lib/database.types';
 import { addDays, addMonths, eachDayOfInterval, endOfMonth, format, isSameDay, startOfMonth, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, RefreshControl, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function PlanningScreen() {
@@ -11,19 +13,54 @@ export default function PlanningScreen() {
 
     // Global State
     const [selectedDate, setSelectedDate] = useState(startDate);
-    const [appointments, setAppointments] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [refreshing, setRefreshing] = useState(false);
 
-    // Team Data
-    const [users, setUsers] = useState<any[]>([]);
-    const [availabilities, setAvailabilities] = useState<any[]>([]);
+    // --- REACT QUERY HOOKS ---
+    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+
+    const { data: users = [], isLoading: isLoadingUsers } = useTeamMembers();
+    const { data: availabilities = [], isLoading: isLoadingAvailability, refetch: refetchAvailability } = useTeamAvailability(selectedDateStr);
+    const { data: interventionsResult, isLoading: isLoadingInterventions, refetch: refetchInterventions } = useInterventions();
+    const assignMechanic = useAssignMechanic();
+    const saveAvailability = useSaveAvailability();
+
+    // Derive appointments from the full interventions list, filtered client-side by selectedDate
+    const appointments = useMemo(() => {
+        const allInterventions = interventionsResult?.data ?? [];
+        return allInterventions.filter((item) => {
+            if (!item.date_heure_debut_prevue) return false;
+            const itemDate = new Date(item.date_heure_debut_prevue);
+            return !isNaN(itemDate.getTime()) && isSameDay(itemDate, selectedDate);
+        });
+    }, [interventionsResult, selectedDate]);
+
+    const loading = isLoadingUsers || isLoadingAvailability || isLoadingInterventions;
+    const [refreshing, setRefreshing] = useState(false);
 
     // --- MODAL STATE: USER CALENDAR ---
     const [showUserModal, setShowUserModal] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [userModalMonth, setUserModalMonth] = useState(new Date());
-    const [userMonthlyAvailability, setUserMonthlyAvailability] = useState<any[]>([]);
+
+    // Local availability edits (starts from server data, mutated locally via toggleDayStatus)
+    const [localMonthlyAvailability, setLocalMonthlyAvailability] = useState<(TeamAvailability & { _modified?: boolean })[]>([]);
+
+    // User monthly availability query
+    const userModalMonthStart = format(startOfMonth(userModalMonth), 'yyyy-MM-dd');
+    const userModalMonthEnd = format(endOfMonth(userModalMonth), 'yyyy-MM-dd');
+    const {
+        data: serverMonthlyAvailability = [],
+        isLoading: isLoadingMonthly,
+        refetch: refetchMonthlyAvailability,
+    } = useUserMonthlyAvailability(
+        selectedUser?.id,
+        userModalMonthStart,
+        userModalMonthEnd,
+    );
+
+    // Sync server data into local state whenever it changes (new month or new user)
+    useEffect(() => {
+        setLocalMonthlyAvailability(serverMonthlyAvailability.map(r => ({ ...r })));
+    }, [serverMonthlyAvailability]);
 
     // --- MODAL STATE: ASSIGNMENT ---
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -31,7 +68,7 @@ export default function PlanningScreen() {
     const [selectedMechanicId, setSelectedMechanicId] = useState<string | null>(null);
 
     // --- MODAL STATE: DETAIL APPOINTMENT ---
-    const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+    const [selectedAppointment, setSelectedAppointment] = useState<InterventionWithRelations | null>(null);
 
     // Helpers
     // Helpers
@@ -62,162 +99,67 @@ export default function PlanningScreen() {
         }
     };
 
-    // --- FETCHING MAIN DATA ---
-
-    const fetchAppointments = async () => {
-        try {
-            setLoading(true);
-            const { data, error } = await supabase
-                .from('interventions')
-                .select('*, clients(nom), vehicles(marque, modele), mecanicien:users(nom, prenom)')
-                .order('date_heure_debut_prevue', { ascending: true });
-
-            if (data) {
-                const dayAppointments = data.filter(item => {
-                    if (!item.date_heure_debut_prevue) return false;
-                    const itemDate = new Date(item.date_heure_debut_prevue);
-                    return !isNaN(itemDate.getTime()) && isSameDay(itemDate, selectedDate);
-                });
-                setAppointments(dayAppointments);
-            }
-        } catch (err) {
-            console.error('Error fetching appointments:', err);
-            Alert.alert('Erreur', 'Impossible de charger les rendez-vous');
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
-
-    const fetchTeamAndAvailability = async () => {
-        try {
-            // 1. Fetch Users
-            const { data: userData } = await supabase.from('users').select('*').eq('actif', true).order('nom');
-            if (userData) setUsers(userData);
-
-            // 2. Fetch Availabilities for SELECTED DAY (Main View)
-            const dateStr = format(selectedDate, 'yyyy-MM-dd');
-            const { data: availData } = await supabase
-                .from('team_availability')
-                .select('*')
-                .eq('date', dateStr);
-
-            if (availData) setAvailabilities(availData);
-        } catch (err) {
-            console.error('Error fetching team:', err);
-        }
-    };
-
     // --- USER MODAL LOGIC ---
 
-    const handleUserClick = (user: any) => {
+    const handleUserClick = (user: User) => {
         setSelectedUser(user);
         setUserModalMonth(new Date()); // Reset to current month
         setShowUserModal(true);
     };
-
-    const fetchUserMonthlyAvailability = async () => {
-        if (!selectedUser) return;
-
-        try {
-            const startStr = format(startOfMonth(userModalMonth), 'yyyy-MM-dd');
-            const endStr = format(endOfMonth(userModalMonth), 'yyyy-MM-dd');
-
-            const { data } = await supabase
-                .from('team_availability')
-                .select('*')
-                .eq('user_id', selectedUser.id)
-                .gte('date', startStr)
-                .lte('date', endStr);
-
-            if (data) setUserMonthlyAvailability(data);
-            else setUserMonthlyAvailability([]);
-
-        } catch (err) {
-            console.error('Error fetching monthly availability:', err);
-        }
-    };
-
-    useEffect(() => {
-        if (showUserModal && selectedUser) {
-            fetchUserMonthlyAvailability();
-        }
-    }, [showUserModal, selectedUser, userModalMonth]);
 
     const toggleDayStatus = (date: Date) => {
         if (!selectedUser) return;
 
         const dateStr = format(date, 'yyyy-MM-dd');
         // Find current status
-        const existingRecord = userMonthlyAvailability.find(r => r.date === dateStr);
+        const existingRecord = localMonthlyAvailability.find(r => r.date === dateStr);
         const currentStatus = existingRecord?.statut || 'present'; // Default assumption
         const newStatus = currentStatus === 'repos' ? 'present' : 'repos';
 
         // Local State Update Only - Mark as modified
-        setUserMonthlyAvailability(prev => {
+        setLocalMonthlyAvailability(prev => {
             const exists = prev.find(r => r.date === dateStr);
             if (exists) {
                 return prev.map(r => r.date === dateStr ? { ...r, statut: newStatus, _modified: true } : r);
             } else {
-                return [...prev, { id: 'local-' + Math.random(), user_id: selectedUser.id, date: dateStr, statut: newStatus, _modified: true }];
+                return [...prev, { id: 'local-' + Math.random(), user_id: selectedUser.id, date: dateStr, statut: newStatus, commentaire: null, _modified: true }];
             }
         });
     };
 
     const handleSaveAvailability = async () => {
         if (!selectedUser) {
-            Alert.alert("Erreur", "Aucun utilisateur sélectionné pour la sauvegarde.");
+            Alert.alert("Erreur", "Aucun utilisateur s\u00e9lectionn\u00e9 pour la sauvegarde.");
             return;
         }
-        Alert.alert("Info", "Sauvegarde lancée...");
+        Alert.alert("Info", "Sauvegarde lanc\u00e9e...");
         try {
-            setLoading(true);
-            const modifiedRecords = userMonthlyAvailability.filter(r => r._modified);
+            const modifiedRecords = localMonthlyAvailability.filter(r => r._modified);
 
             if (modifiedRecords.length === 0) {
-                Alert.alert("Info", "Aucune modification à sauvegarder.");
+                Alert.alert("Info", "Aucune modification \u00e0 sauvegarder.");
                 setShowUserModal(false);
-                setLoading(false);
                 return;
             }
 
-            // Process updates sequentially
-            for (const record of modifiedRecords) {
-                const { data: checkData, error: checkError } = await supabase
-                    .from('team_availability')
-                    .select('id')
-                    .eq('user_id', selectedUser.id)
-                    .eq('date', record.date)
-                    .maybeSingle();
+            await saveAvailability.mutateAsync(
+                modifiedRecords.map(r => ({
+                    user_id: selectedUser.id,
+                    date: r.date,
+                    statut: r.statut || 'present',
+                }))
+            );
 
-                if (checkError) throw checkError;
-
-                if (checkData) {
-                    const { error: updateError } = await supabase.from('team_availability').update({ statut: record.statut }).eq('id', checkData.id);
-                    if (updateError) throw updateError;
-                } else {
-                    const { error: insertError } = await supabase.from('team_availability').insert([{
-                        user_id: selectedUser.id,
-                        date: record.date,
-                        statut: record.statut
-                    }]);
-                    if (insertError) throw insertError;
-                }
-            }
-
-            Alert.alert("Succès", "Disponibilités mises à jour !");
+            Alert.alert("Succ\u00e8s", "Disponibilit\u00e9s mises \u00e0 jour !");
             setShowUserModal(false);
-            fetchTeamAndAvailability(); // Refresh main view
         } catch (err: any) {
             console.error("Save error:", err);
             let msg = err.message || 'Erreur inconnue';
             // Handle common Supabase errors
-            if (err.code === '23503') msg = "Cet employé n'existe pas valides en base (FK Violation).";
-            if (err.code === '42501') msg = "Permission bloquée (RLS). Lancez le script SQL.";
+            if (err.code === '23503') msg = "Cet employ\u00e9 n'existe pas valides en base (FK Violation).";
+            if (err.code === '42501') msg = "Permission bloqu\u00e9e (RLS). Lancez le script SQL.";
 
             Alert.alert("Erreur", "Sauvegarde impossible: " + msg);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -225,41 +167,38 @@ export default function PlanningScreen() {
 
     const handleAssign = async () => {
         if (!selectedInterventionId || !selectedMechanicId) {
-            Alert.alert('Erreur', 'Veuillez sélectionner une intervention et un mécanicien.');
+            Alert.alert('Erreur', 'Veuillez s\u00e9lectionner une intervention et un m\u00e9canicien.');
             return;
         }
 
         try {
-            const { error } = await supabase
-                .from('interventions')
-                .update({ mecanicien_id: selectedMechanicId, statut: 'planifiee' })
-                .eq('id', selectedInterventionId);
+            await assignMechanic.mutateAsync({
+                interventionId: selectedInterventionId,
+                mecanicienId: selectedMechanicId,
+            });
 
-            if (error) throw error;
-
-            Alert.alert('Succès', 'Intervention assignée avec succès.');
+            Alert.alert('Succ\u00e8s', 'Intervention assign\u00e9e avec succ\u00e8s.');
             setShowAssignModal(false);
             setSelectedInterventionId(null);
             setSelectedMechanicId(null);
-            fetchAppointments(); // Refresh list
         } catch (err) {
             console.error('Error assigning:', err);
             Alert.alert('Erreur', "Echec de l'assignation");
         }
     };
 
-
-    // --- EFFECTS ---
-    useEffect(() => {
-        fetchAppointments();
-        fetchTeamAndAvailability();
-    }, [selectedDate]);
+    // --- PULL-TO-REFRESH ---
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await Promise.all([refetchInterventions(), refetchAvailability()]);
+        setRefreshing(false);
+    };
 
     // --- RENDER ---
     return (
         <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
             <View className="p-6 pb-2">
-                <Text className="text-3xl font-black text-slate-900 dark:text-white mb-6">Planning Connecté</Text>
+                <Text className="text-3xl font-black text-slate-900 dark:text-white mb-6">Planning Connect\u00e9</Text>
 
                 {/* Visual Feedback for Loading */}
                 <View className="h-6 mb-2">
@@ -268,7 +207,7 @@ export default function PlanningScreen() {
 
                 {/* Team Planning Horizontal Strip */}
                 <View className="mb-6">
-                    <Text className="text-slate-500 font-bold text-xs uppercase tracking-wider mb-3">Équipe ({format(selectedDate, 'EEEE d', { locale: fr })})</Text>
+                    <Text className="text-slate-500 font-bold text-xs uppercase tracking-wider mb-3">\u00c9quipe ({format(selectedDate, 'EEEE d', { locale: fr })})</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6">
                         {users.map((user) => {
                             const availability = availabilities.find(a => a.user_id === user.id);
@@ -286,7 +225,7 @@ export default function PlanningScreen() {
                                     <Text className="font-bold text-slate-900 text-xs text-center mb-1" numberOfLines={1}>{user.prenom}</Text>
                                     <View className={`px-2 py-0.5 rounded-full ${isPresent ? 'bg-green-100' : 'bg-slate-200'}`}>
                                         <Text className={`text-[8px] font-bold uppercase ${isPresent ? 'text-green-700' : 'text-slate-500'}`}>
-                                            {isPresent ? 'Présent' : 'Absent'}
+                                            {isPresent ? 'Pr\u00e9sent' : 'Absent'}
                                         </Text>
                                     </View>
                                 </TouchableOpacity>
@@ -317,7 +256,7 @@ export default function PlanningScreen() {
 
             <ScrollView
                 className="flex-1 px-6"
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchAppointments(); }} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
             >
                 <Text className="text-slate-500 font-bold uppercase text-xs mb-3">Rendez-vous ({appointments.length})</Text>
 
@@ -370,7 +309,7 @@ export default function PlanningScreen() {
                                     </Text>
                                 </View>
                                 <TouchableOpacity onPress={() => setSelectedAppointment(null)} className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center filter active:bg-slate-200">
-                                    <Text className="text-slate-500 font-bold text-lg">✕</Text>
+                                    <Text className="text-slate-500 font-bold text-lg">{'\u2715'}</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -397,9 +336,9 @@ export default function PlanningScreen() {
                                             </Text>
                                         </View>
                                         <View>
-                                            <Text className="text-slate-400 text-xs font-bold uppercase">Mécanicien</Text>
+                                            <Text className="text-slate-400 text-xs font-bold uppercase">M\u00e9canicien</Text>
                                             <Text className="text-slate-900 dark:text-white font-bold text-base">
-                                                {selectedAppointment.mecanicien ? `${selectedAppointment.mecanicien.prenom} ${selectedAppointment.mecanicien.nom}` : 'Non assigné'}
+                                                {selectedAppointment.mecanicien ? `${selectedAppointment.mecanicien.prenom} ${selectedAppointment.mecanicien.nom}` : 'Non assign\u00e9'}
                                             </Text>
                                         </View>
                                     </View>
@@ -434,21 +373,21 @@ export default function PlanningScreen() {
                             <View className="flex-row justify-between items-center mb-6">
                                 <View>
                                     <Text className="text-2xl font-bold text-slate-900 dark:text-white">{selectedUser.prenom} {selectedUser.nom}</Text>
-                                    <Text className="text-slate-500">Disponibilités</Text>
+                                    <Text className="text-slate-500">Disponibilit\u00e9s</Text>
                                 </View>
                                 <TouchableOpacity onPress={() => setShowUserModal(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full">
-                                    <Text className="text-lg font-bold">✕</Text>
+                                    <Text className="text-lg font-bold">{'\u2715'}</Text>
                                 </TouchableOpacity>
                             </View>
 
                             {/* Month Nav */}
                             <View className="flex-row justify-between items-center mb-4 bg-slate-50 dark:bg-slate-800 p-2 rounded-xl">
                                 <TouchableOpacity onPress={() => setUserModalMonth(prev => subMonths(prev, 1))} className="p-2">
-                                    <Text className="text-2xl">‹</Text>
+                                    <Text className="text-2xl">{'\u2039'}</Text>
                                 </TouchableOpacity>
                                 <Text className="font-bold text-lg capitalize">{format(userModalMonth, 'MMMM yyyy', { locale: fr })}</Text>
                                 <TouchableOpacity onPress={() => setUserModalMonth(prev => addMonths(prev, 1))} className="p-2">
-                                    <Text className="text-2xl">›</Text>
+                                    <Text className="text-2xl">{'\u203a'}</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -470,7 +409,7 @@ export default function PlanningScreen() {
 
                                 {eachDayOfInterval({ start: startOfMonth(userModalMonth), end: endOfMonth(userModalMonth) }).map((date, idx) => {
                                     const dateStr = format(date, 'yyyy-MM-dd');
-                                    const record = userMonthlyAvailability.find(r => r.date === dateStr);
+                                    const record = localMonthlyAvailability.find(r => r.date === dateStr);
                                     const status = record?.statut || 'present';
                                     const isRepos = status === 'repos';
 
@@ -490,7 +429,7 @@ export default function PlanningScreen() {
                             <View className="mt-4 flex-row justify-center space-x-4">
                                 <View className="flex-row items-center mr-4">
                                     <View className="w-3 h-3 rounded-full bg-green-500 mr-2" />
-                                    <Text className="text-xs text-slate-500">Présent</Text>
+                                    <Text className="text-xs text-slate-500">Pr\u00e9sent</Text>
                                 </View>
                                 <View className="flex-row items-center">
                                     <View className="w-3 h-3 rounded-full bg-red-500 mr-2" />
@@ -504,7 +443,7 @@ export default function PlanningScreen() {
                                     onPress={handleSaveAvailability}
                                     className="bg-primary w-full py-4 rounded-xl items-center shadow-lg shadow-blue-500/30"
                                 >
-                                    {loading ? (
+                                    {saveAvailability.isPending ? (
                                         <Text className="text-white font-bold text-lg">Enregistrement...</Text>
                                     ) : (
                                         <Text className="text-white font-bold text-lg">Sauvegarder</Text>
@@ -529,7 +468,7 @@ export default function PlanningScreen() {
                             <View className="flex-row justify-between items-center mb-6">
                                 <Text className="text-xl font-bold text-slate-900 dark:text-white">Planifier</Text>
                                 <TouchableOpacity onPress={() => setShowAssignModal(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full">
-                                    <Text className="text-lg font-bold">✕</Text>
+                                    <Text className="text-lg font-bold">{'\u2715'}</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -546,11 +485,11 @@ export default function PlanningScreen() {
                                         </TouchableOpacity>
                                     ))}
                                     {appointments.filter(a => !a.mecanicien_id).length === 0 && (
-                                        <Text className="text-slate-400 italic">Aucune intervention à assigner</Text>
+                                        <Text className="text-slate-400 italic">Aucune intervention \u00e0 assigner</Text>
                                     )}
                                 </ScrollView>
 
-                                <Text className="text-slate-500 font-bold uppercase text-xs mb-3">2. Mécanicien</Text>
+                                <Text className="text-slate-500 font-bold uppercase text-xs mb-3">2. M\u00e9canicien</Text>
                                 <View className="flex-row flex-wrap mb-6">
                                     {users.map((user) => (
                                         <TouchableOpacity

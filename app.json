@@ -25,8 +25,7 @@
         "NSMicrophoneUsageDescription": "AutoReparis OS utilise le microphone pour enregistrer des vidéos des réparations en cours.",
         "CFBundleLocalizations": [
           "fr"
-        ],
-        "NSLocationWhenInUseUsageDescription": "AutoReparis OS peut utiliser votre position pour localiser le garage le plus proche."
+        ]
       }
     },
     "android": {

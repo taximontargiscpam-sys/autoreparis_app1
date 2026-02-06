@@ -1,20 +1,33 @@
-import { supabase } from '@/lib/supabase';
+import { useDeleteIntervention, useInterventions } from '@/lib/hooks/useInterventions';
+import type { InterventionWithRelations } from '@/lib/database.types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useRouter } from 'expo-router';
 import { Calendar, Filter, Plus, Search, Trash2, Wrench } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function InterventionsScreen() {
     const router = useRouter();
-    const [interventions, setInterventions] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [search, setSearch] = useState('');
     const [activeFilter, setActiveFilter] = useState('Tous');
+
+    const { data, isLoading, refetch } = useInterventions();
+    const { mutate: deleteIntervention } = useDeleteIntervention();
+
+    const interventions: InterventionWithRelations[] = useMemo(() => {
+        const all = data?.data ?? [];
+        if (!search.trim()) return all;
+        const q = search.toLowerCase();
+        return all.filter((i) => {
+            const clientName = i.clients ? `${i.clients.nom} ${i.clients.prenom ?? ''}` : '';
+            const vehicleName = i.vehicles ? `${i.vehicles.marque} ${i.vehicles.modele} ${i.vehicles.immatriculation ?? ''}` : '';
+            return clientName.toLowerCase().includes(q) || vehicleName.toLowerCase().includes(q);
+        });
+    }, [data?.data, search]);
 
     const filters = [
         { label: 'Tous', value: 'Tous' },
@@ -23,27 +36,9 @@ export default function InterventionsScreen() {
         { label: 'Terminées', value: 'terminee' },
     ];
 
-    useEffect(() => {
-        fetchInterventions();
-    }, []);
-
-    const fetchInterventions = async () => {
-        // Only show loading on initial fetch, not on filter change if data exists
-        if (interventions.length === 0) setLoading(true);
-
-        const { data, error } = await supabase
-            .from('interventions')
-            .select(`
-                *,
-                clients (nom, prenom),
-                vehicles (marque, modele, immatriculation)
-            `)
-            .order('created_at', { ascending: false });
-
-        if (!error && data) {
-            setInterventions(data);
-        }
-        setLoading(false);
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await refetch();
         setRefreshing(false);
     };
 
@@ -56,10 +51,10 @@ export default function InterventionsScreen() {
                 {
                     text: "Supprimer",
                     style: "destructive",
-                    onPress: async () => {
-                        const { error } = await supabase.from('interventions').delete().eq('id', id);
-                        if (error) Alert.alert("Erreur", error.message);
-                        else fetchInterventions();
+                    onPress: () => {
+                        deleteIntervention(id, {
+                            onError: (error) => Alert.alert("Erreur", error.message),
+                        });
                     }
                 }
             ]
@@ -88,7 +83,7 @@ export default function InterventionsScreen() {
         }
     };
 
-    const renderItem = ({ item }: { item: any }) => {
+    const renderItem = ({ item }: { item: InterventionWithRelations }) => {
         const statusStyle = getStatusStyle(item.statut);
         const clientName = item.clients ? `${item.clients.nom} ${item.clients.prenom || ''}` : 'Client Inconnu';
         const vehicleName = item.vehicles ? `${item.vehicles.marque} ${item.vehicles.modele}` : 'Véhicule Inconnu';
@@ -173,14 +168,14 @@ export default function InterventionsScreen() {
                 </View>
             </View>
 
-            {loading ? (
+            {isLoading ? (
                 <View className="flex-1 justify-center items-center">
                     <ActivityIndicator size="large" color="#0f172a" />
                 </View>
             ) : (
                 <ScrollView
                     className="flex-1 px-6"
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchInterventions(); }} />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
                 >
                     {/* EN COURS */}
                     {interventions.filter(i => i.statut === 'en_cours').length > 0 && (activeFilter === 'Tous' || activeFilter === 'en_cours') && (

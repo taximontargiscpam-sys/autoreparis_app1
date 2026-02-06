@@ -1,42 +1,19 @@
-import { supabaseWebsite } from '@/lib/supabaseWebsite';
+import { useLead } from '@/lib/hooks/useLeads';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Car, FileText, Mail, MapPin, Phone, Wrench } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { ActivityIndicator, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function LeadDetailScreen() {
-    const { id } = useLocalSearchParams();
+    const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const [lead, setLead] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (id) fetchLeadDetails();
-    }, [id]);
-
-    const fetchLeadDetails = async () => {
-        setLoading(true);
-        const { data, error } = await supabaseWebsite
-            .from('devis_auto')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-        if (error) {
-            Alert.alert('Erreur', "Impossible de charger les détails.");
-            console.error(error);
-            router.back();
-        } else {
-            console.log("Details loaded:", data);
-            setLead(data);
-        }
-        setLoading(false);
-    };
+    const { data: lead, isLoading } = useLead(id);
 
     const handleCall = () => {
-        const phone = lead?.telephone || lead?.tel;
+        const phone = lead?.telephone || (lead as any)?.tel;
         if (phone) Linking.openURL(`tel:${phone}`);
     };
 
@@ -45,24 +22,7 @@ export default function LeadDetailScreen() {
         if (email) Linking.openURL(`mailto:${email}`);
     };
 
-    const handleConvert = () => {
-        router.push({
-            pathname: '/interventions/new',
-            params: {
-                lead_id: lead.id,
-                nom: lead.nom || '',
-                prenom: lead.prenom || '',
-                telephone: lead.telephone || lead.tel || '',
-                email: lead.email || '',
-                marque: lead.marque || '',
-                modele: lead.modele || lead.vehicle_model || '',
-                immatriculation: lead.immatriculation || lead.plaque || '',
-                commentaire: lead.message || lead.description || ''
-            }
-        });
-    };
-
-    if (loading) {
+    if (isLoading) {
         return (
             <View className="flex-1 justify-center items-center bg-slate-50 dark:bg-slate-950">
                 <ActivityIndicator size="large" color="#3b82f6" />
@@ -105,9 +65,9 @@ export default function LeadDetailScreen() {
         }
     };
 
-    const firstName = lead.prenom || lead.prénom || 'N/A';
+    const firstName = lead.prenom || (lead as any).prénom || 'N/A';
     const lastName = lead.nom || 'N/A';
-    const date = formatDateSafe(lead.created_at || lead.cree_a, "d MMMM yyyy 'à' HH:mm");
+    const date = formatDateSafe(lead.created_at || (lead as any).cree_a, "d MMMM yyyy 'à' HH:mm");
 
     return (
         <View className="flex-1 bg-white dark:bg-slate-950">
@@ -132,25 +92,25 @@ export default function LeadDetailScreen() {
                     {/* Main Info */}
                     <View className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-5 mb-6">
                         <Text className="text-lg font-bold text-slate-900 dark:text-white mb-4">Coordonnées</Text>
-                        <Field icon={Phone} label="Téléphone" value={lead.telephone || lead.tel} isLink action={handleCall} />
+                        <Field icon={Phone} label="Téléphone" value={lead.telephone || (lead as any).tel} isLink action={handleCall} />
                         <Field icon={Mail} label="Email" value={lead.email} isLink action={handleEmail} />
-                        <Field icon={MapPin} label="Adresse" value={lead.code_postal ? `${lead.code_postal} ${lead.ville || ''}` : lead.adresse} />
+                        <Field icon={MapPin} label="Adresse" value={(lead as any).code_postal ? `${(lead as any).code_postal} ${(lead as any).ville || ''}` : (lead as any).adresse} />
                     </View>
 
                     {/* Request Details */}
                     <View className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-5 mb-6">
                         <Text className="text-lg font-bold text-slate-900 dark:text-white mb-4">Demande</Text>
-                        <Field icon={Car} label="Véhicule" value={lead.vehicle_model || (lead.marque ? `${lead.marque} ${lead.modele}`.trim() : 'Non spécifié')} />
-                        {lead.annee && <Field icon={Calendar} label="Année" value={String(lead.annee)} />}
-                        <Field icon={FileText} label="Immatriculation" value={lead.immatriculation || lead.plaque} />
+                        <Field icon={Car} label="Véhicule" value={lead.vehicle_model || ((lead as any).marque ? `${(lead as any).marque} ${(lead as any).modele}`.trim() : 'Non spécifié')} />
+                        {(lead as any).annee && <Field icon={Calendar} label="Année" value={String((lead as any).annee)} />}
+                        <Field icon={FileText} label="Immatriculation" value={(lead as any).immatriculation || (lead as any).plaque} />
 
-                        {lead.service_souhaite && <Field icon={Wrench} label="Service souhaité" value={lead.service_souhaite} />}
-                        {lead.date_souhaitee && <Field icon={Calendar} label="Date souhaitée" value={formatDateSafe(lead.date_souhaitee, "d MMMM yyyy")} />}
+                        {(lead as any).service_souhaite && <Field icon={Wrench} label="Service souhaité" value={(lead as any).service_souhaite} />}
+                        {(lead as any).date_souhaitee && <Field icon={Calendar} label="Date souhaitée" value={formatDateSafe((lead as any).date_souhaitee, "d MMMM yyyy")} />}
 
                         <View className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
                             <Text className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Message du client</Text>
                             <Text className="text-slate-800 dark:text-slate-200 text-base leading-7 italic">
-                                "{lead.message || lead.description || 'Aucun message'}"
+                                "{lead.message || (lead as any).description || 'Aucun message'}"
                             </Text>
                         </View>
                     </View>
@@ -176,12 +136,12 @@ export default function LeadDetailScreen() {
                                     lead_id: lead.id,
                                     nom: lead.nom || '',
                                     prenom: lead.prenom || '',
-                                    telephone: lead.telephone || lead.tel || '',
+                                    telephone: lead.telephone || (lead as any).tel || '',
                                     email: lead.email || '',
-                                    marque: lead.marque || '',
-                                    modele: lead.modele || lead.vehicle_model || '',
-                                    immatriculation: lead.immatriculation || lead.plaque || '',
-                                    commentaire: lead.message || lead.description || ''
+                                    marque: (lead as any).marque || '',
+                                    modele: (lead as any).modele || lead.vehicle_model || '',
+                                    immatriculation: (lead as any).immatriculation || (lead as any).plaque || '',
+                                    commentaire: lead.message || (lead as any).description || ''
                                 }
                             }}
                             asChild

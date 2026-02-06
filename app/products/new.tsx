@@ -1,4 +1,6 @@
-import { supabase } from '@/lib/supabase';
+import { useCreateProduct } from '@/lib/hooks/useProducts';
+import { productSchema, getValidationError } from '@/lib/validations';
+import type { ProductCategory } from '@/lib/database.types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Barcode, Box, Calculator, MapPin, Save, Tag } from 'lucide-react-native';
 import React, { useState } from 'react';
@@ -9,9 +11,9 @@ export default function NewProductScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const initialCode = params.code ? (Array.isArray(params.code) ? params.code[0] : params.code) : '';
-    console.log("Rendering NewProductScreen with Category Selector");
 
-    const [loading, setLoading] = useState(false);
+    const createProduct = useCreateProduct();
+
     const [form, setForm] = useState({
         nom: '',
         marque: '',
@@ -25,89 +27,59 @@ export default function NewProductScreen() {
         categorie: 'Mécanique'
     });
 
-    // DEMO DATA for Garage Parts (Simulated)
-    const MOCK_DB: Record<string, any> = {
-        '123456': { nom: 'Filtre à Huile H300', marque: 'Bosch', prix_vente: '12.90', reference: 'F-OIL-001' },
-        '8809000000000': { nom: 'Plaquettes de Frein Avant', marque: 'Brembo', prix_vente: '45.50', reference: 'BR-FR-202' },
-        '3250392601004': { nom: 'Essuie-glace', marque: 'Valeo', prix_vente: '19.99', reference: 'WIPER-500' } // Example real barcode sometimes
-    };
-
-    React.useEffect(() => {
-        if (initialCode) {
-            fetchProductMetadata(initialCode);
-        }
-    }, [initialCode]);
-
-    const fetchProductMetadata = async (code: string) => {
-        setLoading(true);
-        try {
-            // 1. Check Mock DB (Instant Match)
-            if (MOCK_DB[code]) {
-                const p = MOCK_DB[code];
-                setForm(prev => ({ ...prev, nom: p.nom, marque: p.marque, prix_vente: p.prix_vente, reference: p.reference }));
-                Alert.alert("Succès", "Produit identifié (Base Garage) !");
-                setLoading(false);
-                return;
-            }
-
-            // 2. Check OpenFoodFacts (Fallback for demos with soda cans/water bottles)
-            const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
-            const data = await response.json();
-
-            if (data.status === 1) {
-                const product = data.product;
-                setForm(prev => ({
-                    ...prev,
-                    nom: product.product_name_fr || product.product_name || '',
-                    marque: product.brands || '',
-                }));
-                Alert.alert("Succès", "Produit trouvé (OpenData) !");
-            } else {
-                // Fail silently or notify?
-                // Alert.alert("Inconnu", "Ce code barre n'est pas dans la base. Veuillez saisir les détails.");
-            }
-        } catch (e) {
-            console.log("Metadata fetch error", e);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleCreate = async () => {
-        if (!form.nom || !form.prix_vente) {
-            Alert.alert('Erreur', 'Le nom et le prix de vente sont obligatoires.');
+        // Map display category to lowercase DB value
+        const categoryMap: Record<string, ProductCategory> = {
+            'Mécanique': 'mecanique',
+            'Carrosserie': 'carrosserie',
+            'Entretien': 'entretien',
+            'Pneus': 'pneus',
+            'Batterie': 'batterie',
+            'Autre': 'autre',
+        };
+
+        const payload = {
+            nom: form.nom.trim(),
+            categorie: categoryMap[form.categorie] ?? 'autre',
+            code_barres: form.code_barres.trim() || undefined,
+            reference_fournisseur: form.reference.trim() || undefined,
+            prix_achat_unitaire: parseFloat(form.prix_achat) || 0,
+            prix_vente_unitaire: parseFloat(form.prix_vente) || 0,
+            stock_actuel: parseInt(form.stock_actuel) || 0,
+            stock_min: parseInt(form.stock_minimum) || 0,
+            localisation: form.emplacement.trim() || undefined,
+        };
+
+        // Validate with Zod
+        const result = productSchema.safeParse(payload);
+        const error = getValidationError(result);
+        if (error) {
+            Alert.alert('Validation', error);
             return;
         }
 
         try {
-            setLoading(true);
-            const { error } = await supabase.from('products').insert([
-                {
-                    nom: form.nom,
-                    marque: form.marque, // Requires SQL migration
-                    reference_fournisseur: form.reference,
-                    code_barres: form.code_barres,
-                    stock_actuel: parseInt(form.stock_actuel) || 0,
-                    stock_min: parseInt(form.stock_minimum) || 0,
-                    prix_achat_unitaire: parseFloat(form.prix_achat) || 0,
-                    prix_vente_unitaire: parseFloat(form.prix_vente) || 0,
-                    localisation: form.emplacement,
-                    categorie: form.categorie.toLowerCase(),
-                }
-            ]);
+            await createProduct.mutateAsync({
+                nom: payload.nom,
+                categorie: payload.categorie as ProductCategory,
+                code_barres: payload.code_barres ?? null,
+                reference_fournisseur: payload.reference_fournisseur ?? null,
+                prix_achat_unitaire: payload.prix_achat_unitaire,
+                prix_vente_unitaire: payload.prix_vente_unitaire,
+                stock_actuel: payload.stock_actuel,
+                stock_min: payload.stock_min,
+                localisation: payload.localisation ?? null,
+            });
 
-            if (error) throw error;
-
-            Alert.alert('Succès', 'Produit créé avec succès', [
+            Alert.alert('Succes', 'Produit cree avec succes', [
                 { text: 'OK', onPress: () => router.replace('/(tabs)/stock') }
             ]);
         } catch (err: any) {
-            console.error(err);
             Alert.alert('Erreur', err.message);
-        } finally {
-            setLoading(false);
         }
     };
+
+    const loading = createProduct.isPending;
 
     return (
         <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">

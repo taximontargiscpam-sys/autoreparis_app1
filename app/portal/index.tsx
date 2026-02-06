@@ -1,71 +1,26 @@
 import { useRouter } from 'expo-router';
 import { Car, Search } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { globalStore } from '../../lib/store';
-import { supabase } from '../../lib/supabase';
+import { useVehicleSearch } from '@/lib/hooks/useVehicleSearch';
 
 export default function ClientLoginScreen() {
     const [plate, setPlate] = useState('');
-    const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { search, loading, error } = useVehicleSearch();
+
+    // Show error alert reactively when the hook sets an error
+    useEffect(() => {
+        if (error) {
+            Alert.alert('Recherche', error);
+        }
+    }, [error]);
 
     async function handleSearch() {
-        if (!plate) {
-            Alert.alert('Erreur', 'Veuillez entrer une plaque d\'immatriculation.');
-            return;
+        const interventionId = await search(plate);
+        if (interventionId) {
+            router.push({ pathname: '/tracking', params: { id: interventionId } });
         }
-
-        setLoading(true);
-        // 1. Find the vehicle
-        const { data: vehicles, error: vError } = await supabase
-            .from('vehicles')
-            .select('id, client_id')
-            .ilike('immatriculation', plate.trim());
-
-        if (vError) {
-            Alert.alert('Erreur', 'Une erreur est survenue lors de la recherche. Veuillez réessayer.');
-            setLoading(false);
-            return;
-        }
-
-        if (!vehicles || vehicles.length === 0) {
-            Alert.alert('Introuvable', `Aucun véhicule trouvé pour la plaque ${plate.trim()}. Vérifiez l'immatriculation et réessayez.`);
-            setLoading(false);
-            return;
-        }
-
-        // Robust Search: Iterate through ALL matching vehicles to find one with an active intervention.
-        // This handles cases where "Zombie" vehicles exist from failed seed attempts
-        let validIntervention = null;
-
-        for (const vehicle of vehicles) {
-            const { data: intervention, error: iError } = await supabase
-                .from('interventions')
-                .select('id, statut')
-                .eq('vehicle_id', vehicle.id)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single();
-
-            if (intervention) {
-                validIntervention = intervention;
-                break; // Found one!
-            }
-        }
-
-        if (!validIntervention) {
-            Alert.alert('Information', 'Aucune intervention en cours n\'est associée à ce véhicule.');
-            setLoading(false);
-            return;
-        }
-
-        // Set ID in global store to ensure it reaches the tracking screen
-        globalStore.setId(validIntervention.id);
-
-        // Redirect to tracking page
-        router.push('/tracking');
-        setLoading(false);
     }
 
     return (
@@ -80,7 +35,7 @@ export default function ClientLoginScreen() {
                             <Car size={48} color="white" />
                         </View>
                         <Text className="text-3xl font-bold text-white text-center">Suivi Atelier</Text>
-                        <Text className="text-gray-400 text-center mt-2">Suivez les réparations de votre véhicule en temps réel.</Text>
+                        <Text className="text-gray-400 text-center mt-2">Suivez les reparations de votre vehicule en temps reel.</Text>
                     </View>
 
                     <View className="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700">
@@ -107,14 +62,14 @@ export default function ClientLoginScreen() {
                             ) : (
                                 <>
                                     <Search size={22} color="white" className="mr-2" />
-                                    <Text className="text-white font-bold text-lg">Suivre mon véhicule</Text>
+                                    <Text className="text-white font-bold text-lg">Suivre mon vehicule</Text>
                                 </>
                             )}
                         </TouchableOpacity>
                     </View>
 
                     <TouchableOpacity className="mt-12 border-t border-slate-800 pt-6 w-full items-center" onPress={() => router.push('/(auth)/login')}>
-                        <Text className="text-slate-600 mb-1 text-xs">Vous êtes un garage ?</Text>
+                        <Text className="text-slate-600 mb-1 text-xs">Vous etes un garage ?</Text>
                         <Text className="text-primary font-bold">Connexion Espace Pro</Text>
                     </TouchableOpacity>
                 </View>

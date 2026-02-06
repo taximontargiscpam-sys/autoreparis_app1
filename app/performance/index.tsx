@@ -1,10 +1,11 @@
 import { supabase } from '@/lib/supabase';
+import { useQuery } from '@tanstack/react-query';
 import { addDays, format, isSameDay, startOfWeek, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { ArrowLeft, Calendar, CreditCard, Layers } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,74 +14,58 @@ const { width } = Dimensions.get('window');
 
 export default function PerformanceScreen() {
     const router = useRouter();
-    const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({
-        monthlyRevenue: 0,
-        averageBasket: 0,
-        interventionsCount: 0
-    });
-    const [weeklyData, setWeeklyData] = useState<any[]>([]);
-    const [transactions, setTransactions] = useState<any[]>([]);
     const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-    useEffect(() => {
-        fetchPerformanceData();
-    }, []);
+    const { data: transactions = [], isLoading: loading } = useQuery({
+        queryKey: ['performance-stats'],
+        queryFn: async () => {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const fetchPerformanceData = async () => {
-        setLoading(true);
-        const startDate = subDays(new Date(), 30).toISOString();
+            const { data, error } = await supabase
+                .from('interventions')
+                .select('*, client:clients(nom, prenom), vehicle:vehicles(marque, modele, immatriculation)')
+                .in('statut', ['terminee', 'facturee'])
+                .gte('created_at', thirtyDaysAgo.toISOString())
+                .order('created_at', { ascending: false });
 
-        const { data, error } = await supabase
-            .from('interventions')
-            .select('*, client:clients(nom, prenom), vehicle:vehicles(marque, modele, immatriculation)')
-            // We include all 'money' statuses
-            .in('statut', ['terminee', 'facturee'])
-            .gte('created_at', startDate)
-            .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data ?? [];
+        },
+    });
 
-        if (error) {
-            console.error(error);
-            setLoading(false);
-            return;
-        }
+    const stats = useMemo(() => {
+        const revenue = transactions.reduce((acc: number, curr: any) => acc + (curr.total_vente || 0), 0);
+        const count = transactions.length;
+        const avg = count > 0 ? revenue / count : 0;
+        return {
+            monthlyRevenue: revenue,
+            interventionsCount: count,
+            averageBasket: Math.round(avg),
+        };
+    }, [transactions]);
 
-        if (data) {
-            const revenue = data.reduce((acc, curr) => acc + (curr.total_vente || 0), 0);
-            const count = data.length;
-            const avg = count > 0 ? revenue / count : 0;
+    const weeklyData = useMemo(() => {
+        const today = new Date();
+        const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 });
 
-            setStats({
-                monthlyRevenue: revenue,
-                interventionsCount: count,
-                averageBasket: Math.round(avg),
-            });
-
-            setTransactions(data);
-
-            const today = new Date();
-            const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 = Monday
-
-            const chartData = Array.from({ length: 7 }).map((_, i) => {
-                const date = addDays(startOfCurrentWeek, i);
-                const dayTotal = data
-                    .filter(item => isSameDay(new Date(item.created_at), date))
-                    .reduce((acc, curr) => acc + (curr.total_vente || 0), 0);
-                return {
-                    day: format(date, 'EEE', { locale: fr }).replace('.', ''),
-                    value: dayTotal,
-                    fullDate: date
-                };
-            });
-            setWeeklyData(chartData);
-        }
-        setLoading(false);
-    };
+        return Array.from({ length: 7 }).map((_, i) => {
+            const date = addDays(startOfCurrentWeek, i);
+            const dayTotal = transactions
+                .filter((item: any) => isSameDay(new Date(item.created_at), date))
+                .reduce((acc: number, curr: any) => acc + (curr.total_vente || 0), 0);
+            return {
+                day: format(date, 'EEE', { locale: fr }).replace('.', ''),
+                value: dayTotal,
+                fullDate: date,
+            };
+        });
+    }, [transactions]);
 
     const maxVal = Math.max(...(weeklyData.map(d => d.value) || [0]), 1);
 
     const filteredTransactions = selectedDay
-        ? transactions.filter(t => isSameDay(new Date(t.created_at), selectedDay))
+        ? transactions.filter((t: any) => isSameDay(new Date(t.created_at), selectedDay))
         : transactions;
 
     return (
@@ -228,7 +213,7 @@ export default function PerformanceScreen() {
                                         <Text className="text-slate-500 font-bold">Aucune activité ce jour-là</Text>
                                     </View>
                                 ) : (
-                                    filteredTransactions.map((item, index) => (
+                                    filteredTransactions.map((item: any, index: number) => (
                                         <Animated.View
                                             key={item.id}
                                             entering={FadeInDown.delay(600 + (index * 50)).springify()}

@@ -1,4 +1,5 @@
-import { supabase } from '@/lib/supabase';
+import { useDeleteProduct, useProducts } from '@/lib/hooks/useProducts';
+import type { Product } from '@/lib/database.types';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Package, ScanLine, Trash2 } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
@@ -6,44 +7,48 @@ import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, TouchableOpac
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const CATEGORY_MAP: Record<string, string> = {
+    'Tous': 'all',
+    'Mécanique': 'mecanique',
+    'Carrosserie': 'carrosserie',
+    'Entretien': 'entretien',
+    'Pneus': 'pneus',
+    'Batterie': 'batterie',
+};
+
 export default function StockScreen() {
     const router = useRouter();
-    const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string>('Tous');
 
+    const queryCategory = CATEGORY_MAP[selectedCategory] ?? 'all';
+    const { data, isLoading, refetch } = useProducts(queryCategory);
+    const deleteProduct = useDeleteProduct();
+
+    const products: Product[] = data?.data ?? [];
+
+    // Refetch when screen comes into focus
     useFocusEffect(
         useCallback(() => {
-            fetchProducts();
-        }, [])
+            refetch();
+        }, [refetch])
     );
 
-    const fetchProducts = async () => {
-        setLoading(true);
-        const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .order('nom', { ascending: true });
-
-        if (error) console.error(error);
-
-        const fetchedData = data || [];
-        setProducts(fetchedData);
-        setLoading(false);
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await refetch();
         setRefreshing(false);
-    };
-
+    }, [refetch]);
 
     const handleDelete = (id: string, nom: string) => {
         Alert.alert("Supprimer", `Supprimer ${nom} du stock ?`, [
             { text: "Annuler", style: "cancel" },
             {
                 text: "Supprimer", style: "destructive",
-                onPress: async () => {
-                    const { error } = await supabase.from('products').delete().eq('id', id);
-                    if (error) Alert.alert("Erreur", error.message);
-                    else fetchProducts();
+                onPress: () => {
+                    deleteProduct.mutate(id, {
+                        onError: (error) => Alert.alert("Erreur", error.message),
+                    });
                 }
             }
         ]);
@@ -60,10 +65,6 @@ export default function StockScreen() {
             </TouchableOpacity>
         );
     };
-
-    const filteredProducts = selectedCategory === 'Tous'
-        ? products
-        : products.filter(p => (p.categorie || '').toLowerCase() === selectedCategory.toLowerCase());
 
     const categories = ['Tous', 'Mécanique', 'Carrosserie', 'Entretien', 'Pneus', 'Batterie'];
 
@@ -100,16 +101,16 @@ export default function StockScreen() {
                     />
                 </View>
 
-                {loading ? (
+                {isLoading && !refreshing ? (
                     <View className="flex-1 justify-center items-center">
                         <ActivityIndicator size="large" color="#16a34a" />
                     </View>
                 ) : (
                     <FlatList
-                        data={filteredProducts}
+                        data={products}
                         keyExtractor={item => item.id}
                         contentContainerStyle={{ padding: 16, paddingTop: 0 }}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchProducts(); }} />}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                         ListEmptyComponent={
                             <View className="items-center py-20 opacity-50">
                                 <Package size={48} color="#cbd5e1" />

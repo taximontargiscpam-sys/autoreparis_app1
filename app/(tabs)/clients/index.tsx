@@ -1,44 +1,28 @@
 
-import { supabase } from '@/lib/supabase';
+import { useClients, useDeleteClient } from '@/lib/hooks/useClients';
+import type { Client } from '@/lib/database.types';
 import { useRouter } from 'expo-router';
 import { Plus, Search, Trash2, User } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ClientsScreen() {
     const router = useRouter();
-    const [clients, setClients] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [refreshing, setRefreshing] = useState(false);
 
-    const fetchClients = async () => {
-        setLoading(true);
-        let query = supabase
-            .from('clients')
-            .select('*')
-            .order('nom', { ascending: true });
+    const { data, isLoading, refetch } = useClients(search);
+    const deleteClient = useDeleteClient();
 
-        if (search) {
-            query = query.or(`nom.ilike.%${search}%,prenom.ilike.%${search}%`);
-        }
+    const clients = data?.data ?? [];
 
-        const { data, error } = await query;
-
-        if (error) {
-            console.error(error);
-        } else {
-            setClients(data || []);
-        }
-        setLoading(false);
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await refetch();
         setRefreshing(false);
-    };
-
-    useEffect(() => {
-        fetchClients();
-    }, [search]);
+    }, [refetch]);
 
     const handleDelete = (id: string, nom: string) => {
         Alert.alert(
@@ -49,10 +33,10 @@ export default function ClientsScreen() {
                 {
                     text: "Supprimer",
                     style: "destructive",
-                    onPress: async () => {
-                        const { error } = await supabase.from('clients').delete().eq('id', id);
-                        if (error) Alert.alert("Erreur", error.message);
-                        else fetchClients();
+                    onPress: () => {
+                        deleteClient.mutate(id, {
+                            onError: (error) => Alert.alert("Erreur", error.message),
+                        });
                     }
                 }
             ]
@@ -71,7 +55,7 @@ export default function ClientsScreen() {
         );
     };
 
-    const renderItem = ({ item }: { item: any }) => (
+    const renderItem = ({ item }: { item: Client }) => (
         <Swipeable renderRightActions={(p, d) => renderRightActions(p, d, item.id, item.nom)}>
             <TouchableOpacity
                 onPress={() => router.push(`/(tabs)/clients/${item.id}` as any)}
@@ -82,7 +66,7 @@ export default function ClientsScreen() {
                 </View>
                 <View className="flex-1">
                     <Text className="text-lg font-bold text-slate-900 dark:text-white">{item.nom} {item.prenom}</Text>
-                    <Text className="text-slate-500 text-sm">{item.telephone || 'Sans téléphone'} • {item.ville || 'Ville inconnue'}</Text>
+                    <Text className="text-slate-500 text-sm">{item.telephone || 'Sans telephone'} • {item.ville || 'Ville inconnue'}</Text>
                 </View>
             </TouchableOpacity>
         </Swipeable>
@@ -114,7 +98,7 @@ export default function ClientsScreen() {
                 </View>
             </View>
 
-            {loading && !refreshing ? (
+            {isLoading && !refreshing ? (
                 <View className="flex-1 justify-center items-center">
                     <ActivityIndicator size="large" color="#2563eb" />
                 </View>
@@ -124,10 +108,10 @@ export default function ClientsScreen() {
                     renderItem={renderItem}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={{ padding: 24, paddingTop: 0 }}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchClients(); }} />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                     ListEmptyComponent={
                         <View className="items-center mt-20">
-                            <Text className="text-slate-400 text-center">Aucun client trouvé.</Text>
+                            <Text className="text-slate-400 text-center">Aucun client trouve.</Text>
                         </View>
                     }
                 />

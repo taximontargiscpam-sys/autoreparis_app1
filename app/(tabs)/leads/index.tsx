@@ -1,9 +1,11 @@
+import { useLeads, useDeleteLead } from '@/lib/hooks/useLeads';
 import { supabaseWebsite } from '@/lib/supabaseWebsite';
+import type { DevisAuto } from '@/lib/database.types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Phone, Search, Trash2 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Linking, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Linking, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,50 +13,33 @@ import { Link, useRouter } from 'expo-router';
 
 export default function LeadsScreen() {
     const router = useRouter();
-    const [leads, setLeads] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [search, setSearch] = useState('');
 
-    useEffect(() => {
-        fetchLeads();
+    const { data, isLoading, refetch } = useLeads(search);
+    const leads = data ?? [];
 
+    const deleteLead = useDeleteLead();
+
+    // Realtime subscription — call refetch on any change
+    useEffect(() => {
         const subscription = supabaseWebsite
             .channel('leads_realtime_devis')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'devis_auto' }, (_payload) => {
-                fetchLeads(); // Simple refresh for now
+                refetch();
             })
             .subscribe();
 
         return () => { subscription.unsubscribe(); };
-    }, []);
-
-    const fetchLeads = async () => {
-        setLoading(true);
-        const { data, error } = await supabaseWebsite
-            .from('devis_auto')
-            .select('*');
-
-        if (error) {
-            console.error("Error fetching website leads:", error.message);
-            Alert.alert("Erreur Connexion", "Impossible de lire la base du site : " + error.message);
-        }
-
-        if (data) {
-            setLeads(data);
-        }
-        setLoading(false);
-        setRefreshing(false);
-    };
+    }, [refetch]);
 
     const handleCall = (phone: string) => {
         if (!phone) return;
         Linking.openURL(`tel:${phone}`);
     };
 
-    const handleArchive = async (id: string) => {
-        await supabaseWebsite.from('devis_auto').update({ statut: 'perdu' }).eq('id', id);
-        fetchLeads();
+    const handleArchive = (id: string) => {
+        deleteLead.mutate(id);
     };
 
     const getStatusInfo = (status: string) => {
@@ -79,13 +64,13 @@ export default function LeadsScreen() {
         );
     };
 
-    const renderItem = ({ item }: { item: any }) => {
+    const renderItem = ({ item }: { item: DevisAuto }) => {
         const statusInfo = getStatusInfo(item.statut);
         // Map fields that might be French or English
-        const firstName = item.prenom || item.prénom || 'Prospect';
+        const firstName = item.prenom || (item as any).prénom || 'Prospect';
         const lastName = item.nom || '';
-        const msg = item.message || item.description || 'Pas de message';
-        const date = item.created_at || item.cree_a || item.date || new Date().toISOString();
+        const msg = item.message || (item as any).description || 'Pas de message';
+        const date = item.created_at || (item as any).cree_a || (item as any).date || new Date().toISOString();
 
         return (
             <Swipeable renderRightActions={(p, d) => renderRightActions(p, d, item.id)}>
@@ -127,7 +112,7 @@ export default function LeadsScreen() {
 
                             {/* Actions */}
                             <TouchableOpacity
-                                onPress={() => handleCall(item.telephone || item.tel)}
+                                onPress={() => handleCall(item.telephone || (item as any).tel)}
                                 className="bg-emerald-500 h-14 rounded-full flex-row items-center justify-center shadow-lg shadow-emerald-500/20 active:scale-[0.98]"
                             >
                                 <Phone size={20} color="white" className="mr-3" />
@@ -139,12 +124,6 @@ export default function LeadsScreen() {
             </Swipeable>
         );
     };
-
-
-    const filteredLeads = leads.filter(l =>
-        (l.nom?.toLowerCase() || '').includes(search.toLowerCase()) ||
-        (l.email?.toLowerCase() || '').includes(search.toLowerCase())
-    );
 
     return (
         <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
@@ -165,11 +144,11 @@ export default function LeadsScreen() {
             </View>
 
             <FlatList
-                data={filteredLeads}
+                data={leads}
                 keyExtractor={item => item.id}
                 renderItem={renderItem}
                 contentContainerStyle={{ padding: 24, paddingTop: 10 }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchLeads(); }} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); refetch().finally(() => setRefreshing(false)); }} />}
                 ListEmptyComponent={
                     <View className="items-center justify-center py-20 opacity-50">
                         <Search size={48} color="#94a3b8" />

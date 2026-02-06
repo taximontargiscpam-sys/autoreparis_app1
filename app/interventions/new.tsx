@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { supabaseWebsite } from '@/lib/supabaseWebsite';
+import { clientSchema, getValidationError, interventionSchema, vehicleSchema } from '@/lib/validations';
+import { useQueryClient } from '@tanstack/react-query';
 import { addDays, startOfToday } from 'date-fns';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function NewInterventionScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const qc = useQueryClient();
     const [loading, setLoading] = useState(false);
 
     // Form State
@@ -66,64 +69,61 @@ export default function NewInterventionScreen() {
     };
 
     const handleCreate = async () => {
-        if (!client.nom || !vehicle.immatriculation) {
-            Alert.alert('Erreur', 'Le nom du client et l\'immatriculation sont requis.');
+        // --- Zod Validation ---
+        const clientResult = clientSchema.safeParse(client);
+        const clientError = getValidationError(clientResult);
+        if (clientError) {
+            Alert.alert('Erreur client', clientError);
+            return;
+        }
+
+        const vehicleResult = vehicleSchema.safeParse({
+            ...vehicle,
+            kilometrage: vehicle.kilometrage ? parseInt(vehicle.kilometrage, 10) : undefined,
+        });
+        const vehicleError = getValidationError(vehicleResult);
+        if (vehicleError) {
+            Alert.alert('Erreur véhicule', vehicleError);
+            return;
+        }
+
+        const [hours, minutes] = selectedTime.split(':').map(Number);
+        const interventionDate = new Date(selectedDate);
+        interventionDate.setHours(hours, minutes, 0, 0);
+
+        const interventionResult = interventionSchema.safeParse({
+            type_intervention: typeIntervention,
+            date_heure_debut_prevue: interventionDate.toISOString(),
+            commentaire,
+            total_vente: parseFloat(estimatedPrice.replace(',', '.')) || 0,
+        });
+        const interventionError = getValidationError(interventionResult);
+        if (interventionError) {
+            Alert.alert('Erreur intervention', interventionError);
             return;
         }
 
         setLoading(true);
         try {
-            // 1. Create Client
-            const { data: clientData, error: clientError } = await supabase
-                .from('clients')
-                .insert([{
-                    nom: client.nom,
-                    prenom: client.prenom,
-                    telephone: client.telephone,
-                    email: client.email
-                }])
-                .select()
-                .single();
+            // Create intervention via RPC (creates client + vehicle + intervention atomically)
+            const { data: interventionId, error: rpcError } = await supabase.rpc('create_full_intervention', {
+                p_client_nom: client.nom,
+                p_client_prenom: client.prenom,
+                p_client_telephone: client.telephone,
+                p_client_email: client.email,
+                p_vehicle_marque: vehicle.marque,
+                p_vehicle_modele: vehicle.modele,
+                p_vehicle_immatriculation: vehicle.immatriculation,
+                p_vehicle_kilometrage: parseInt(vehicle.kilometrage, 10) || 0,
+                p_type_intervention: typeIntervention,
+                p_date_heure_debut_prevue: interventionDate.toISOString(),
+                p_commentaire: commentaire,
+                p_total_vente: parseFloat(estimatedPrice.replace(',', '.')) || 0,
+            });
 
-            if (clientError) throw clientError;
+            if (rpcError) throw rpcError;
 
-            // 2. Create Vehicle
-            const { data: vehicleData, error: vehicleError } = await supabase
-                .from('vehicles')
-                .insert([{
-                    client_id: clientData.id,
-                    marque: vehicle.marque,
-                    modele: vehicle.modele,
-                    immatriculation: vehicle.immatriculation,
-                    kilometrage: parseInt(vehicle.kilometrage) || 0
-                }])
-                .select()
-                .single();
-
-            if (vehicleError) throw vehicleError;
-
-            // 3. Create Intervention with specific Date/Time
-            const [hours, minutes] = selectedTime.split(':').map(Number);
-            const interventionDate = new Date(selectedDate);
-            interventionDate.setHours(hours, minutes, 0, 0);
-
-            const { data: interventionData, error: interventionError } = await supabase
-                .from('interventions')
-                .insert([{
-                    client_id: clientData.id,
-                    vehicle_id: vehicleData.id,
-                    statut: 'planifiee',
-                    type_intervention: typeIntervention,
-                    date_heure_debut_prevue: interventionDate.toISOString(),
-                    commentaire: commentaire,
-                    total_vente: parseFloat(estimatedPrice.replace(',', '.')) || 0,
-                }])
-                .select()
-                .single();
-
-            if (interventionError) throw interventionError;
-
-            // 4. Upload Photos
+            // Upload Photos after intervention is created
             for (const photo of photos) {
                 const formData = new FormData();
                 formData.append('file', {
@@ -132,7 +132,7 @@ export default function NewInterventionScreen() {
                     type: 'image/jpeg',
                 } as any);
 
-                const fileName = `${interventionData.id}/${Date.now()}.jpg`;
+                const fileName = `${interventionId}/${Date.now()}.jpg`;
                 const { error: uploadError } = await supabase.storage
                     .from('vehicle-photos')
                     .upload(fileName, formData);
@@ -141,7 +141,7 @@ export default function NewInterventionScreen() {
                     const { data: publicUrlData } = supabase.storage.from('vehicle-photos').getPublicUrl(fileName);
                     if (publicUrlData) {
                         await supabase.from('vehicle_photos').insert([{
-                            intervention_id: interventionData.id,
+                            intervention_id: interventionId,
                             url_image: publicUrlData.publicUrl,
                             type: 'etat_initial'
                         }]);
@@ -149,7 +149,7 @@ export default function NewInterventionScreen() {
                 }
             }
 
-            // 5. Delete Lead after conversion
+            // Delete Lead after conversion
             if (params.lead_id) {
                 const { error: deleteLeadError } = await supabaseWebsite
                     .from('devis_auto')
@@ -158,6 +158,10 @@ export default function NewInterventionScreen() {
 
                 if (deleteLeadError) console.error("Error deleting lead:", deleteLeadError);
             }
+
+            // Invalidate React Query caches so lists & dashboard update
+            qc.invalidateQueries({ queryKey: ['interventions'] });
+            qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
 
             Alert.alert('Succès', 'Intervention planifiée avec succès !');
             router.back();

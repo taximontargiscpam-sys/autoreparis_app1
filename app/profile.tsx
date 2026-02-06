@@ -1,49 +1,39 @@
+import { useAuth } from '@/components/AuthContext';
+import type { User } from '@/lib/database.types';
 import { handleError } from '@/lib/errorHandler';
+import { useCreateTeamMember, useDeleteTeamMember, useTeamMembers } from '@/lib/hooks/useTeam';
 import { supabase } from '@/lib/supabase';
+import { getValidationError, passwordSchema, teamMemberSchema } from '@/lib/validations';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Building2, Lock, LogOut, Mail, Plus, Trash2 } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import { Alert, Modal, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Modal, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 export default function GarageProfileScreen() {
     const router = useRouter();
-    const [loading, setLoading] = useState(true);
-    const [team, setTeam] = useState<any[]>([]);
-    const [currentUser, setCurrentUser] = useState<any>(null);
+    const { user: currentUser } = useAuth();
+
+    // React Query hooks for team data
+    const { data: team = [], isLoading: loading } = useTeamMembers();
+    const createMember = useCreateTeamMember();
+    const deleteMember = useDeleteTeamMember();
 
     // Modal State
     const [showAddModal, setShowAddModal] = useState(false);
-    const [newUser, setNewUser] = useState({ nom: '', prenom: '', email: '', role: 'mecanicien' });
+    const [newUser, setNewUser] = useState({ nom: '', prenom: '', role: 'mecanicien' });
 
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [passwordForm, setPasswordForm] = useState({ new: '', confirm: '' });
 
-    useEffect(() => {
-        fetchTeam();
-        fetchCurrentUser();
-    }, []);
-
-    const fetchCurrentUser = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
-    };
-
-    const fetchTeam = async () => {
-        setLoading(true);
-        const { data, error } = await supabase.from('users').select('*').order('nom');
-        if (data) setTeam(data);
-        if (error) handleError(error, "Impossible de charger l'équipe.");
-        setLoading(false);
-    };
-
     const handleUpdatePassword = async () => {
-        if (passwordForm.new.length < 6) {
-            Alert.alert("Erreur", "Le mot de passe doit faire au moins 6 caractères.");
-            return;
-        }
-        if (passwordForm.new !== passwordForm.confirm) {
-            Alert.alert("Erreur", "Les mots de passe ne correspondent pas.");
+        const result = passwordSchema.safeParse({
+            password: passwordForm.new,
+            confirmPassword: passwordForm.confirm,
+        });
+        const validationError = getValidationError(result);
+        if (validationError) {
+            Alert.alert("Erreur", validationError);
             return;
         }
 
@@ -59,36 +49,32 @@ export default function GarageProfileScreen() {
     };
 
     const handleAddUser = async () => {
-        if (!newUser.nom || !newUser.prenom) {
-            Alert.alert("Erreur", "Nom et Prénom requis");
+        const result = teamMemberSchema.safeParse({
+            prenom: newUser.prenom,
+            nom: newUser.nom,
+            role: newUser.role,
+        });
+        const validationError = getValidationError(result);
+        if (validationError) {
+            Alert.alert("Erreur", validationError);
             return;
         }
 
         try {
-            const { error } = await supabase.from('users').insert([{
-                nom: newUser.nom,
+            await createMember.mutateAsync({
                 prenom: newUser.prenom,
-                email: newUser.email || '',
+                nom: newUser.nom,
                 role: newUser.role,
-                actif: true
-            }]);
-
-            if (error) {
-                handleError(error, "Impossible d'ajouter le membre. Vérifiez la configuration de la base de données.");
-            } else {
-                Alert.alert("Succès", "Membre ajouté avec succès.");
-                fetchTeam();
-            }
+            });
+            Alert.alert("Succès", "Membre ajouté avec succès.");
             setShowAddModal(false);
-            setNewUser({ nom: '', prenom: '', email: '', role: 'mecanicien' });
-
+            setNewUser({ nom: '', prenom: '', role: 'mecanicien' });
         } catch (e) {
-            handleError(e, "Erreur inattendue lors de l'ajout.");
+            handleError(e, "Impossible d'ajouter le membre. Vérifiez la configuration de la base de données.");
         }
     };
 
-
-    const handleDeleteMember = (member: any) => {
+    const handleDeleteMember = (member: User) => {
         Alert.alert(
             "Supprimer le membre",
             `Voulez-vous supprimer ${member.prenom} ${member.nom} de l'équipe ?`,
@@ -96,13 +82,15 @@ export default function GarageProfileScreen() {
                 { text: "Annuler", style: "cancel" },
                 {
                     text: "Supprimer", style: "destructive",
-                    onPress: async () => {
-                        const { error } = await supabase.from('users').delete().eq('id', member.id);
-                        if (error) Alert.alert("Erreur", error.message);
-                        else {
-                            Alert.alert("Succès", "Membre supprimé.");
-                            fetchTeam();
-                        }
+                    onPress: () => {
+                        deleteMember.mutate(member.id, {
+                            onSuccess: () => {
+                                Alert.alert("Succès", "Membre supprimé.");
+                            },
+                            onError: (error) => {
+                                Alert.alert("Erreur", error.message);
+                            },
+                        });
                     }
                 }
             ]
@@ -110,7 +98,7 @@ export default function GarageProfileScreen() {
     };
 
 
-    const renderRightActions = (_progress: any, _dragX: any, member: any) => {
+    const renderRightActions = (_progress: any, _dragX: any, member: User) => {
         return (
             <TouchableOpacity
                 onPress={() => handleDeleteMember(member)}
@@ -214,6 +202,9 @@ export default function GarageProfileScreen() {
                         </View>
 
                         <View>
+                            {loading && (
+                                <ActivityIndicator size="large" className="mt-8" />
+                            )}
                             {team.map((member, idx) => (
                                 <View key={member.id || idx} className="mb-4">
                                     <Swipeable renderRightActions={(p, d) => renderRightActions(p, d, member)}>
@@ -243,12 +234,62 @@ export default function GarageProfileScreen() {
                         </View>
                     </View>
 
+                    {/* Legal Section */}
+                    <View className="mb-8">
+                        <Text className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-3 ml-2">Informations Légales</Text>
+                        <View className="bg-white dark:bg-slate-900 rounded-[24px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <TouchableOpacity
+                                onPress={() => Alert.alert("Politique de Confidentialité", "Consultable sur notre site web.")}
+                                className="p-5 border-b border-slate-100 dark:border-slate-800 flex-row justify-between items-center bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800"
+                            >
+                                <Text className="text-slate-900 dark:text-white font-bold text-base">Politique de Confidentialité</Text>
+                                <ArrowLeft size={16} className="text-slate-400 rotate-180" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => Alert.alert("CGU", "Consultables sur notre site web.")}
+                                className="p-5 flex-row justify-between items-center bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800"
+                            >
+                                <Text className="text-slate-900 dark:text-white font-bold text-base">Conditions Générales</Text>
+                                <ArrowLeft size={16} className="text-slate-400 rotate-180" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
                     <TouchableOpacity
                         onPress={handleLogout}
-                        className="bg-red-50 dark:bg-red-500/10 h-[72px] rounded-[24px] flex-row items-center justify-center border border-red-100 dark:border-red-500/20 mt-4 active:scale-[0.98]"
+                        className="bg-slate-200 dark:bg-slate-800/50 h-[60px] rounded-[24px] flex-row items-center justify-center border border-slate-300 dark:border-slate-700 active:scale-[0.98] mb-4"
                     >
-                        <LogOut size={22} color="#ef4444" className="mr-3" />
-                        <Text className="text-red-500 font-bold text-lg">Se déconnecter</Text>
+                        <LogOut size={20} className="text-slate-600 dark:text-slate-400 mr-3" />
+                        <Text className="text-slate-600 dark:text-slate-400 font-bold text-lg">Se déconnecter</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => {
+                            Alert.alert(
+                                "Supprimer mon compte",
+                                "Cette action est irréversible. Votre compte sera désactivé immédiatement et vous ne pourrez plus accéder à l'application.",
+                                [
+                                    { text: "Annuler", style: "cancel" },
+                                    {
+                                        text: "Confirmer la suppression",
+                                        style: "destructive",
+                                        onPress: async () => {
+                                            try {
+                                                const { error } = await supabase.from('users').update({ actif: false }).eq('id', currentUser?.id);
+                                                if (error) throw error;
+                                                await supabase.auth.signOut();
+                                                router.replace('/(auth)/login');
+                                            } catch (e: any) {
+                                                Alert.alert("Erreur", e.message);
+                                            }
+                                        }
+                                    }
+                                ]
+                            );
+                        }}
+                        className="h-[40px] items-center justify-center mb-8"
+                    >
+                        <Text className="text-red-400 font-medium text-sm">Supprimer mon compte</Text>
                     </TouchableOpacity>
 
                     <View className="h-12" />
@@ -291,7 +332,7 @@ export default function GarageProfileScreen() {
                             <View>
                                 <Text className="text-slate-400 mb-3 font-bold text-xs uppercase tracking-wider">Rôle</Text>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-3">
-                                    {['mecanicien', 'reception', 'admin'].map(role => (
+                                    {['mecanicien', 'frontdesk', 'admin', 'lecture'].map(role => (
                                         <TouchableOpacity
                                             key={role}
                                             onPress={() => setNewUser({ ...newUser, role })}
@@ -306,9 +347,14 @@ export default function GarageProfileScreen() {
 
                         <TouchableOpacity
                             onPress={handleAddUser}
-                            className="bg-blue-500 w-full py-5 rounded-[24px] items-center mt-auto mb-4 shadow-lg shadow-blue-500/30 active:scale-[0.98]"
+                            disabled={createMember.isPending}
+                            className={`w-full py-5 rounded-[24px] items-center mt-auto mb-4 shadow-lg shadow-blue-500/30 active:scale-[0.98] ${createMember.isPending ? 'bg-blue-300' : 'bg-blue-500'}`}
                         >
-                            <Text className="text-white font-bold text-xl">Créer le profil</Text>
+                            {createMember.isPending ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text className="text-white font-bold text-xl">Créer le profil</Text>
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -1,133 +1,65 @@
+import { useProduct, useUpdateStock } from '@/lib/hooks/useProducts';
 import { supabase } from '@/lib/supabase';
+import type { StockMovement, User } from '@/lib/database.types';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Minus, Package, Plus, Save } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+
+type MovementWithUser = StockMovement & {
+    users: Pick<User, 'nom' | 'prenom'> | null;
+};
 
 export default function ProductDetailScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
-    const [product, setProduct] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const qc = useQueryClient();
     const [stockAdjustment, setStockAdjustment] = useState(0);
-    const [movements, setMovements] = useState<any[]>([]);
 
-    useEffect(() => {
-        if (id) {
-            fetchProduct();
-            fetchHistory();
-        } else {
-            router.back();
-        }
-    }, [id]);
+    const productId = Array.isArray(id) ? id[0] : id;
 
-    const fetchProduct = async () => {
-        setLoading(true);
+    const { data: product, isLoading } = useProduct(productId);
+    const updateStock = useUpdateStock();
 
-        // Define Dummy Data (Same as stock.tsx)
-        const dummyData: Record<string, any> = {
-            'd1': { id: 'd1', nom: 'Filtre à Huile Bosch', categorie: 'Entretien', stock_actuel: 15, stock_min: 5, prix_vente_unitaire: 12.90, reference_fournisseur: 'F-001-B', prix_achat_unitaire: 8.50 },
-            'd2': { id: 'd2', nom: 'Pneus Michelin 205/55 R16', categorie: 'Pneus', stock_actuel: 4, stock_min: 8, prix_vente_unitaire: 89.00, reference_fournisseur: 'M-205-55', prix_achat_unitaire: 65.00 },
-            'd3': { id: 'd3', nom: 'Plaquettes de Frein Brembo', categorie: 'Mécanique', stock_actuel: 2, stock_min: 2, prix_vente_unitaire: 45.50, reference_fournisseur: 'BR-999', prix_achat_unitaire: 25.00 },
-            'd4': { id: 'd4', nom: 'Batterie Varta 12V 70Ah', categorie: 'Batterie', stock_actuel: 3, stock_min: 2, prix_vente_unitaire: 120.00, reference_fournisseur: 'V-70AH', prix_achat_unitaire: 80.00 },
-            'd5': { id: 'd5', nom: 'Huile Castrol 5W30 (5L)', categorie: 'Entretien', stock_actuel: 10, stock_min: 5, prix_vente_unitaire: 59.90, reference_fournisseur: 'C-5W30', prix_achat_unitaire: 35.00 },
-            'd6': { id: 'd6', nom: 'Pare-Choc Avant (Peinture)', categorie: 'Carrosserie', stock_actuel: 1, stock_min: 1, prix_vente_unitaire: 180.00, reference_fournisseur: 'PC-AV-01', prix_achat_unitaire: 120.00 },
-            'd7': { id: 'd7', nom: 'Phare LED Avant Droit', categorie: 'Carrosserie', stock_actuel: 0, stock_min: 1, prix_vente_unitaire: 350.00, reference_fournisseur: 'PH-LED-R', prix_achat_unitaire: 240.00 },
-            'd8': { id: 'd8', nom: 'Amortisseurs Arrière (Paire)', categorie: 'Mécanique', stock_actuel: 1, stock_min: 2, prix_vente_unitaire: 110.00, reference_fournisseur: 'AM-RR-02', prix_achat_unitaire: 75.00 },
-            'd9': { id: 'd9', nom: 'Kit Embrayage Valeo', categorie: 'Mécanique', stock_actuel: 0, stock_min: 1, prix_vente_unitaire: 230.00, reference_fournisseur: 'KB-VAL', prix_achat_unitaire: 150.00 },
-            'd10': { id: 'd10', nom: 'Liquide Refroidissement -30°C', categorie: 'Entretien', stock_actuel: 8, stock_min: 4, prix_vente_unitaire: 14.50, reference_fournisseur: 'L-COOL', prix_achat_unitaire: 9.00 },
-        };
-
-        const idStr = Array.isArray(id) ? id[0] : id;
-        if (idStr && dummyData[idStr]) {
-            setProduct(dummyData[idStr]);
-            setLoading(false);
-            return;
-        }
-
-        const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-        if (error) {
-            Alert.alert('Erreur', 'Produit introuvable');
-            router.back();
-        } else {
-            setProduct(data);
-        }
-        setLoading(false);
-    };
-
-    const fetchHistory = async () => {
-        const { data, error } = await supabase
-            .from('stock_movements')
-            .select('*, users(nom, prenom)')
-            .eq('product_id', id)
-            .order('created_at', { ascending: false });
-
-        if (!error) setMovements(data || []);
-    };
+    const { data: movements = [] } = useQuery<MovementWithUser[]>({
+        queryKey: ['stock-movements', productId],
+        enabled: !!productId,
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('stock_movements')
+                .select('*, users(nom, prenom)')
+                .eq('product_id', productId!)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return (data ?? []) as MovementWithUser[];
+        },
+    });
 
     const handleStockUpdate = async () => {
-        if (stockAdjustment === 0) return;
+        if (stockAdjustment === 0 || !product) return;
 
         const newStock = (product.stock_actuel || 0) + stockAdjustment;
 
-        // Dummy Data Handling
-        if (product.id.toString().startsWith('d')) {
-            // Update local product state
-            setProduct((prev: any) => ({ ...prev, stock_actuel: newStock }));
-
-            // Add dummy movement
-            const newMovement = {
-                id: Math.random().toString(),
-                type: stockAdjustment > 0 ? 'entree' : 'sortie',
-                quantite: Math.abs(stockAdjustment),
-                stock_avant: product.stock_actuel,
-                stock_apres: newStock,
-                created_at: new Date().toISOString(),
-                users: { prenom: 'Moi (Demo)' }
-            };
-            setMovements([newMovement, ...movements]);
-
-            Alert.alert('Succès', 'Stock mis à jour (Simulation)');
-            setStockAdjustment(0);
-            return;
-        }
-
-        // 1. Update product stock
-        const { error } = await supabase
-            .from('products')
-            .update({ stock_actuel: newStock })
-            .eq('id', id);
-
-        // 2. Log movement
-        if (!error) {
-            // Get current user ID if possible, for now simplify
-            const { data: { user } } = await supabase.auth.getUser();
-
-            await supabase.from('stock_movements').insert([{
-                product_id: id,
-                type: stockAdjustment > 0 ? 'entree' : 'sortie',
-                quantite: Math.abs(stockAdjustment),
+        try {
+            await updateStock.mutateAsync({
+                productId: product.id,
+                newStock,
+                previousStock: product.stock_actuel,
                 motif: 'Ajustement manuel',
-                stock_avant: product.stock_actuel,
-                stock_apres: newStock,
-                user_id: user?.id
-            }]);
+            });
 
-            Alert.alert('Succès', 'Stock mis à jour');
-            fetchProduct();
-            fetchHistory(); // Refresh history
+            // Also invalidate local movements query
+            qc.invalidateQueries({ queryKey: ['stock-movements', productId] });
+
+            Alert.alert('Succes', 'Stock mis a jour');
             setStockAdjustment(0);
-        } else {
-            Alert.alert('Erreur', 'Impossible de mettre à jour le stock');
+        } catch {
+            Alert.alert('Erreur', 'Impossible de mettre a jour le stock');
         }
     };
 
-    if (loading) {
+    if (isLoading || !product) {
         return (
             <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center">
                 <ActivityIndicator size="large" color="#0f172a" />

@@ -1,4 +1,5 @@
-import { supabase } from '@/lib/supabase';
+import { useCreateClient, useCreateVehicle } from '@/lib/hooks/useClients';
+import { clientSchema, vehicleSchema, getValidationError } from '@/lib/validations';
 import { useRouter } from 'expo-router';
 import { Save } from 'lucide-react-native';
 import React, { useState } from 'react';
@@ -24,55 +25,58 @@ export default function NewClientScreen() {
         immatriculation: ''
     });
 
+    const createClient = useCreateClient();
+    const createVehicle = useCreateVehicle();
+
+    const hasVehicleData = vehicleData.marque || vehicleData.modele || vehicleData.immatriculation;
+
     const handleCreate = async () => {
-        if (!formData.nom) {
-            Alert.alert('Erreur', 'Le nom est obligatoire.');
+        // Validate client data
+        const clientResult = clientSchema.safeParse(formData);
+        const clientError = getValidationError(clientResult);
+        if (clientError) {
+            Alert.alert('Erreur de validation', clientError);
             return;
         }
 
-        // Debug Session
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Current User ID:", session?.user?.id);
-
-        if (!session) {
-            Alert.alert('Erreur', 'Vous n\'êtes pas connecté.');
-            return;
+        // Validate vehicle data if any field is filled
+        if (hasVehicleData) {
+            const vehicleResult = vehicleSchema.safeParse(vehicleData);
+            const vehicleError = getValidationError(vehicleResult);
+            if (vehicleError) {
+                Alert.alert('Erreur de validation', vehicleError);
+                return;
+            }
         }
 
         setLoading(true);
 
-        // 1. Create Client
-        const { data: client, error } = await supabase
-            .from('clients')
-            .insert([formData])
-            .select()
-            .single();
+        try {
+            // 1. Create Client
+            const client = await createClient.mutateAsync(clientResult.data! as any);
 
-        if (error) {
-            console.error(error);
-            setLoading(false);
-            Alert.alert('Erreur', "Impossible de créer le client. " + (error.message || ''));
-            return;
-        }
-
-        // 2. Create Vehicle if data provided
-        if (vehicleData.marque || vehicleData.modele || vehicleData.immatriculation) {
-            const { error: vehError } = await supabase
-                .from('vehicles')
-                .insert([{
-                    ...vehicleData,
-                    client_id: client.id
-                }]);
-
-            if (vehError) {
-                console.error("Vehicle Error:", vehError);
-                Alert.alert('Attention', 'Client créé mais impossible d\'associer le véhicule.');
+            // 2. Create Vehicle if data provided
+            if (hasVehicleData) {
+                try {
+                    const vehicleResult = vehicleSchema.safeParse(vehicleData);
+                    await createVehicle.mutateAsync({
+                        ...vehicleResult.data!,
+                        client_id: client.id,
+                    } as any);
+                } catch (vehErr: any) {
+                    console.error("Vehicle Error:", vehErr);
+                    Alert.alert('Attention', "Client cree mais impossible d'associer le vehicule.");
+                }
             }
-        }
 
-        setLoading(false);
-        Alert.alert('Succès', 'Client ajouté avec succès !');
-        router.back();
+            setLoading(false);
+            Alert.alert('Succes', 'Client ajoute avec succes !');
+            router.back();
+        } catch (err: any) {
+            console.error(err);
+            setLoading(false);
+            Alert.alert('Erreur', "Impossible de creer le client. " + (err.message || ''));
+        }
     };
 
     return (
@@ -89,7 +93,7 @@ export default function NewClientScreen() {
 
                         <View className="flex-row gap-4 mb-4">
                             <View className="flex-1">
-                                <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Prénom</Text>
+                                <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Prenom</Text>
                                 <TextInput
                                     className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white font-medium"
                                     placeholder="Jean"
@@ -121,7 +125,7 @@ export default function NewClientScreen() {
                             onChangeText={(text) => setFormData({ ...formData, email: text })}
                         />
 
-                        <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Téléphone</Text>
+                        <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Telephone</Text>
                         <TextInput
                             className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white font-medium mb-4"
                             placeholder="06 12 34 56 78"
@@ -136,7 +140,7 @@ export default function NewClientScreen() {
                         <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Adresse postale</Text>
                         <TextInput
                             className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white font-medium mb-4"
-                            placeholder="123 Rue de la République"
+                            placeholder="123 Rue de la Republique"
                             placeholderTextColor="#94a3b8"
                             value={formData.adresse}
                             onChangeText={(text) => setFormData({ ...formData, adresse: text })}
@@ -166,7 +170,7 @@ export default function NewClientScreen() {
                             </View>
                         </View>
 
-                        <Text className="text-lg font-bold text-slate-900 dark:text-white mb-6 mt-8">Véhicule (Optionnel)</Text>
+                        <Text className="text-lg font-bold text-slate-900 dark:text-white mb-6 mt-8">Vehicule (Optionnel)</Text>
 
                         <View className="flex-row gap-4 mb-4">
                             <View className="flex-1">
@@ -180,7 +184,7 @@ export default function NewClientScreen() {
                                 />
                             </View>
                             <View className="flex-1">
-                                <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Modèle</Text>
+                                <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Modele</Text>
                                 <TextInput
                                     className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white font-medium"
                                     placeholder="Clio V"
@@ -209,7 +213,7 @@ export default function NewClientScreen() {
                         className={`bg-blue-600 p-5 rounded-xl flex-row items-center justify-center shadow-lg shadow-blue-500/30 mb-10 ${loading ? 'opacity-70' : ''}`}
                     >
                         {loading ? (
-                            <Text className="text-white font-bold text-lg">Création en cours...</Text>
+                            <Text className="text-white font-bold text-lg">Creation en cours...</Text>
                         ) : (
                             <>
                                 <Save size={24} color="white" className="mr-3" />

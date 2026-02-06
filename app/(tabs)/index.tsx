@@ -1,7 +1,7 @@
-import { supabase } from '@/lib/supabase';
+import { useDashboardStats } from '@/lib/hooks/useInterventions';
 import { useRouter } from 'expo-router';
 import { AlertTriangle, Plus, ScanBarcode, TrendingUp, Users, Wrench } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Dimensions, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,51 +10,21 @@ const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState({
+  const { data, isLoading, refetch } = useDashboardStats();
+
+  const stats = data ?? {
     interventionsCount: 0,
     leadsCount: 0,
     stockLowCount: 0,
-    revenue: 0 // Mocked for now
-  });
-
-  const fetchStats = async () => {
-    setLoading(true);
-
-    // 1. Count Active Interventions
-    const { count: iCount } = await supabase.from('interventions').select('*', { count: 'exact', head: true }).neq('statut', 'terminee');
-
-    // 2. Count Stock Low
-    const { count: sCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).lt('stock_actuel', 5);
-
-    // 3. Count New Leads
-    const { count: lCount } = await supabase.from('leads_site_web').select('*', { count: 'exact', head: true }).eq('statut', 'nouveau');
-
-    // Fetch actual weekly revenue
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const { data: revenueData } = await supabase
-      .from('interventions')
-      .select('total_vente')
-      .in('statut', ['terminee', 'facturee'])
-      .gte('created_at', weekAgo.toISOString());
-
-    const weeklyRevenue = revenueData?.reduce((acc, curr) => acc + (curr.total_vente || 0), 0) || 0;
-
-    setStats({
-      interventionsCount: iCount || 0,
-      leadsCount: lCount || 0,
-      stockLowCount: sCount || 0,
-      revenue: weeklyRevenue
-    });
-    setLoading(false);
-    setRefreshing(false);
+    revenue: 0,
   };
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   const KPICard = ({ title, value, icon: Icon, color, delay, onPress, trend }: any) => {
     return (
@@ -92,7 +62,7 @@ export default function DashboardScreen() {
       <SafeAreaView className="flex-1">
         <ScrollView
           contentContainerStyle={{ padding: 20, paddingTop: 10 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchStats(); }} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* Modern Header */}
           <View className="flex-row justify-between items-center mb-6 mt-1">
@@ -203,4 +173,3 @@ export default function DashboardScreen() {
     </View>
   );
 }
-

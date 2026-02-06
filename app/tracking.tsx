@@ -1,147 +1,132 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-// Hooks removed to prevent "Missing Navigation Context" crash
-// import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Calendar, CheckCircle, Clock, Hammer, Image as ImageIcon, Info, User, Wrench } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { handleError } from '../lib/errorHandler';
 
 const { width } = Dimensions.get('window');
 
-import { handleError } from '../lib/errorHandler';
-import { globalStore } from '../lib/store';
+async function fetchInterventionData(targetId: string) {
+    const { data, error } = await supabase
+        .from('interventions')
+        .select(`
+            *,
+            vehicles (*),
+            mecanicien: users (nom, prenom),
+            lines: intervention_lines (*),
+            photos: vehicle_photos (*)
+        `)
+        .eq('id', targetId)
+        .single();
 
-// ... imports
+    if (error) throw error;
+    return data;
+}
 
-export default function TrackingScreen(props: any) {
-    // Props handling
+function generateTimeline(data: any) {
+    const events: any[] = [];
 
-    const route = props.route;
+    // 1. Creation Event
+    events.push({
+        id: 'created',
+        type: 'status',
+        title: 'Prise en charge du vehicule',
+        date: data.created_at,
+        icon: Calendar,
+        color: 'bg-blue-500'
+    });
 
-    // PRIORITY: Global Store > Navigation Params > Props
-    // This fixed the "Missing ID" issue definitively
-    const id = globalStore.getId() || route?.params?.id || props.id;
-    const navigation = props.navigation;
+    // 2. Add specific lines (Parts/Labor) as events
+    if (data.lines) {
+        data.lines.forEach((line: any) => {
+            events.push({
+                id: line.id,
+                type: line.type_ligne,
+                title: line.description || (line.type_ligne === 'piece' ? 'Piece ajoutee' : 'Main d\'oeuvre'),
+                subtitle: line.quantite > 1 ? `${line.quantite}x - Ajoute a la reparation` : 'Ajoute a la reparation',
+                date: line.created_at || data.created_at,
+                icon: line.type_ligne === 'piece' ? Wrench : Hammer,
+                color: line.type_ligne === 'piece' ? 'bg-orange-500' : 'bg-purple-500'
+            });
+        });
+    }
 
-    const [intervention, setIntervention] = useState<any>(null);
-    const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    // 3. Current Status Event (if not just created)
+    if (data.statut === 'terminee') {
+        events.push({
+            id: 'finished',
+            type: 'status',
+            title: 'Reparations terminees',
+            date: new Date().toISOString(),
+            icon: CheckCircle,
+            color: 'bg-green-500',
+            isHighlight: true
+        });
+    }
+
+    // Sort by date descending (newest first)
+    return events.reverse();
+}
+
+export default function TrackingScreen() {
+    const { id: rawId } = useLocalSearchParams<{ id: string }>();
+    const router = useRouter();
+    const qc = useQueryClient();
+
+    const id = Array.isArray(rawId) ? rawId[0] : rawId;
+
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+
+    // React Query for initial data fetch and cache management
+    const { data: intervention, isLoading } = useQuery({
+        queryKey: ['tracking', id],
+        queryFn: () => fetchInterventionData(id!),
+        enabled: !!id,
+    });
+
+    // Derive timeline from intervention data
+    const timelineEvents = useMemo(() => {
+        if (!intervention) return [];
+        return generateTimeline(intervention);
+    }, [intervention]);
+
+    // Realtime subscription: invalidate the React Query cache on changes
+    useEffect(() => {
+        if (!id) return;
+
+        const channel = supabase
+            .channel(`intervention-${id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'interventions', filter: `id=eq.${id}` }, () => {
+                qc.invalidateQueries({ queryKey: ['tracking', id] });
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'intervention_lines', filter: `intervention_id=eq.${id}` }, () => {
+                qc.invalidateQueries({ queryKey: ['tracking', id] });
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'vehicle_photos', filter: `intervention_id=eq.${id}` }, () => {
+                qc.invalidateQueries({ queryKey: ['tracking', id] });
+            })
+            .subscribe();
+
+        return () => {
+            channel.unsubscribe();
+            supabase.removeChannel(channel);
+        };
+    }, [id, qc]);
 
     // Navigation helper
     const goBack = () => {
-        if (navigation) {
-            navigation.goBack();
-        }
+        router.back();
     };
 
-    useEffect(() => {
-        if (!id) {
-            setLoading(false);
-            return;
-        }
-
-        fetchIntervention();
-
-        const subscription = supabase
-            .channel(`intervention-${id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'interventions', filter: `id=eq.${id}` }, fetchIntervention)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'intervention_lines', filter: `intervention_id=eq.${id}` }, fetchIntervention)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'vehicle_photos', filter: `intervention_id=eq.${id}` }, fetchIntervention)
-            .subscribe();
-
-        return () => { subscription.unsubscribe(); };
-    }, [id]);
-
-    async function fetchIntervention() {
-        try {
-            // Fetch intervention data
-            const targetId = Array.isArray(id) ? id[0] : id;
-
-            if (!targetId) {
-                setLoading(false);
-                return;
-            }
-
-            // Fetch intervention with related data including photos
-            const { data, error } = await supabase
-                .from('interventions')
-                .select(`
-                    *,
-                    vehicles (*),
-                    mecanicien: users (nom, prenom),
-                    lines: intervention_lines (*),
-                    photos: vehicle_photos (*)
-                `)
-                .eq('id', targetId)
-                .single();
-
-            if (error) {
-                throw error;
-            }
-
-            if (data) {
-                setIntervention(data);
-                generateTimeline(data);
-            }
-        } catch (err: any) {
-            handleError(err, "Impossible de charger le suivi de l'intervention.");
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    const generateTimeline = (data: any) => {
-        const events: any[] = [];
-
-        // 1. Creation Event
-        events.push({
-            id: 'created',
-            type: 'status',
-            title: 'Prise en charge du véhicule',
-            date: data.created_at,
-            icon: Calendar,
-            color: 'bg-blue-500'
-        });
-
-        // 2. Add specific lines (Parts/Labor) as events
-        if (data.lines) {
-            data.lines.forEach((line: any) => {
-                events.push({
-                    id: line.id,
-                    type: line.type_ligne,
-                    title: line.description || (line.type_ligne === 'piece' ? 'Pièce ajoutée' : 'Main d\'œuvre'),
-                    subtitle: line.quantite > 1 ? `${line.quantite}x - Ajouté à la réparation` : 'Ajouté à la réparation',
-                    date: line.created_at || data.created_at,
-                    icon: line.type_ligne === 'piece' ? Wrench : Hammer,
-                    color: line.type_ligne === 'piece' ? 'bg-orange-500' : 'bg-purple-500'
-                });
-            });
-        }
-
-        // 3. Current Status Event (if not just created)
-        if (data.statut === 'terminee') {
-            events.push({
-                id: 'finished',
-                type: 'status',
-                title: 'Réparations terminées',
-                date: new Date().toISOString(), // In real app, would use updated_at
-                icon: CheckCircle,
-                color: 'bg-green-500',
-                isHighlight: true
-            });
-        }
-
-        // Sort by date descending (newest first)
-        setTimelineEvents(events.reverse());
-    };
-
-    if (loading) return <View className="flex-1 bg-slate-900 justify-center items-center"><ActivityIndicator color="#22c55e" /></View>;
+    if (isLoading) return <View className="flex-1 bg-slate-900 justify-center items-center"><ActivityIndicator color="#22c55e" /></View>;
     if (!intervention) return (
         <SafeAreaView className="flex-1 bg-slate-900 justify-center items-center p-4">
             <Text className="text-white text-lg font-bold mb-2">Intervention introuvable</Text>
-            <Text className="text-slate-500 text-center">Impossible de charger les détails de cette intervention.</Text>
+            <Text className="text-slate-500 text-center">Impossible de charger les details de cette intervention.</Text>
             <TouchableOpacity onPress={goBack} className="mt-8 bg-slate-800 px-6 py-3 rounded-full">
                 <Text className="text-white font-bold">Retour</Text>
             </TouchableOpacity>
@@ -193,14 +178,14 @@ export default function TrackingScreen(props: any) {
                                 <Text className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Estimation de fin</Text>
                                 <Text className="text-3xl font-bold text-white mb-2">
                                     {intervention.date_heure_fin_prevue
-                                        ? format(new Date(intervention.date_heure_fin_prevue), 'dd MMM à HH:mm', { locale: fr })
-                                        : 'À confirmer'}
+                                        ? format(new Date(intervention.date_heure_fin_prevue), 'dd MMM a HH:mm', { locale: fr })
+                                        : 'A confirmer'}
                                 </Text>
                                 {intervention.mecanicien && (
                                     <View className="flex-row items-center mt-2 bg-slate-900/50 self-start px-3 py-1.5 rounded-full">
                                         <User size={12} color="#94a3b8" className="mr-2" />
                                         <Text className="text-slate-300 text-xs">
-                                            Mécanicien : {intervention.mecanicien.prenom} {intervention.mecanicien.nom}
+                                            Mecanicien : {intervention.mecanicien.prenom} {intervention.mecanicien.nom}
                                         </Text>
                                     </View>
                                 )}
@@ -211,13 +196,13 @@ export default function TrackingScreen(props: any) {
                             <View className="bg-slate-800/50 p-4 rounded-xl mb-6 border border-slate-700">
                                 <View className="flex-row items-center mb-2">
                                     <Info size={14} color="#94a3b8" className="mr-2" />
-                                    <Text className="text-slate-400 text-xs font-bold uppercase">Note du mécanicien</Text>
+                                    <Text className="text-slate-400 text-xs font-bold uppercase">Note du mecanicien</Text>
                                 </View>
                                 <Text className="text-slate-200 italic">" {intervention.commentaire} "</Text>
                             </View>
                         )}
 
-                        <Text className="text-slate-500 font-bold mb-6 uppercase text-xs tracking-wider">Dernières Activités</Text>
+                        <Text className="text-slate-500 font-bold mb-6 uppercase text-xs tracking-wider">Dernieres Activites</Text>
                         {timelineEvents.map((event, index) => {
                             const Icon = event.icon;
                             const isLast = index === timelineEvents.length - 1;
@@ -252,19 +237,19 @@ export default function TrackingScreen(props: any) {
 
                     {/* SECTION: DETAILS & BILLING */}
                     <View className="mt-8 pt-8 border-t border-slate-800">
-                        <Text className="text-slate-500 font-bold mb-6 uppercase text-xs tracking-wider">Détails & Facturation</Text>
+                        <Text className="text-slate-500 font-bold mb-6 uppercase text-xs tracking-wider">Details & Facturation</Text>
 
                         {/* Financial Summary */}
                         <View className="bg-slate-800 p-6 rounded-3xl mb-6 border border-slate-700 shadow-sm">
-                            <Text className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">Total Estimé</Text>
+                            <Text className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">Total Estime</Text>
                             <View className="flex-row items-end">
-                                <Text className="text-4xl font-black text-white">{intervention.total_ttc || '0.00'} €</Text>
+                                <Text className="text-4xl font-black text-white">{intervention.total_ttc || '0.00'} </Text>
                                 <Text className="text-slate-500 text-lg mb-1.5 ml-2">TTC</Text>
                             </View>
                         </View>
 
                         {/* Parts List */}
-                        <Text className="text-slate-400 font-bold mb-4 uppercase text-[10px] tracking-wider ml-1">Pièces ({parts.length})</Text>
+                        <Text className="text-slate-400 font-bold mb-4 uppercase text-[10px] tracking-wider ml-1">Pieces ({parts.length})</Text>
                         {parts.length > 0 ? parts.map((line: any, index: number) => (
                             <View key={line.id} className="bg-slate-800/50 p-4 rounded-2xl mb-3 border border-slate-800 flex-row justify-between items-center">
                                 <View className="flex-row items-center flex-1">
@@ -273,17 +258,17 @@ export default function TrackingScreen(props: any) {
                                     </View>
                                     <View className="flex-1 mr-2">
                                         <Text className="text-white font-bold text-base">{line.description}</Text>
-                                        <Text className="text-slate-500 text-xs text-slate-400">Quantité: {line.quantite}</Text>
+                                        <Text className="text-slate-500 text-xs text-slate-400">Quantite: {line.quantite}</Text>
                                     </View>
                                 </View>
-                                <Text className="text-white font-bold">{line.montant_ttc} €</Text>
+                                <Text className="text-white font-bold">{line.montant_ttc} </Text>
                             </View>
                         )) : (
-                            <Text className="text-slate-600 italic mb-6 ml-1">Aucune pièce listée</Text>
+                            <Text className="text-slate-600 italic mb-6 ml-1">Aucune piece listee</Text>
                         )}
 
                         {/* Labor List */}
-                        <Text className="text-slate-400 font-bold mt-4 mb-4 uppercase text-[10px] tracking-wider ml-1">Main d'œuvre</Text>
+                        <Text className="text-slate-400 font-bold mt-4 mb-4 uppercase text-[10px] tracking-wider ml-1">Main d'oeuvre</Text>
                         {labor.length > 0 ? labor.map((line: any, index: number) => (
                             <View key={line.id} className="bg-slate-800/50 p-4 rounded-2xl mb-3 border border-slate-800 flex-row justify-between items-center">
                                 <View className="flex-row items-center flex-1">
@@ -292,13 +277,13 @@ export default function TrackingScreen(props: any) {
                                     </View>
                                     <View className="flex-1 mr-2">
                                         <Text className="text-white font-bold text-base">{line.description}</Text>
-                                        <Text className="text-slate-500 text-xs text-slate-400">Temps passé</Text>
+                                        <Text className="text-slate-500 text-xs text-slate-400">Temps passe</Text>
                                     </View>
                                 </View>
-                                <Text className="text-white font-bold">{line.montant_ttc} €</Text>
+                                <Text className="text-white font-bold">{line.montant_ttc} </Text>
                             </View>
                         )) : (
-                            <Text className="text-slate-600 italic ml-1">Aucune main d'œuvre listée</Text>
+                            <Text className="text-slate-600 italic ml-1">Aucune main d'oeuvre listee</Text>
                         )}
                     </View>
 

@@ -1,73 +1,51 @@
 import InterventionParts from '@/components/intervention/InterventionParts';
 import InterventionPhotos from '@/components/intervention/InterventionPhotos';
 import InterventionSummary from '@/components/intervention/InterventionSummary';
+import type { InterventionWithRelations } from '@/lib/database.types';
+import { useAssignMechanic, useIntervention } from '@/lib/hooks/useInterventions';
 import { supabase } from '@/lib/supabase';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Camera, FileText, User, Wrench, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function InterventionDetailScreen() {
-    const { id } = useLocalSearchParams();
+    const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const [intervention, setIntervention] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const qc = useQueryClient();
     const [activeTab, setActiveTab] = useState<'summary' | 'parts' | 'photos'>('summary');
-
-    // Mechanic Assignment
-    const [users, setUsers] = useState<any[]>([]);
     const [showMechanicModal, setShowMechanicModal] = useState(false);
 
+    // React Query: fetch intervention detail
+    const { data: intervention, isLoading, refetch } = useIntervention(id);
+
+    // React Query: fetch active users for mechanic assignment
+    const { data: users = [] } = useQuery({
+        queryKey: ['users-active'],
+        queryFn: async () => {
+            const { data, error } = await supabase.from('users').select('*').eq('actif', true).order('nom');
+            if (error) throw error;
+            return data ?? [];
+        },
+    });
+
+    // React Query: assign mechanic mutation
+    const assignMechanic = useAssignMechanic();
+
     useEffect(() => {
-        if (id) {
-            fetchInterventionDetails();
-            fetchUsers();
-        } else {
+        if (!id) {
             router.back();
         }
     }, [id]);
 
-    const fetchUsers = async () => {
-        const { data } = await supabase.from('users').select('*').eq('actif', true).order('nom');
-        if (data) {
-            setUsers(data);
-        }
-    };
-
-    const fetchInterventionDetails = async () => {
-        setLoading(true);
-
-        const { data, error } = await supabase
-            .from('interventions')
-            .select(`
-                *,
-                clients (*),
-                vehicles (*),
-                mecanicien: users (id, nom, prenom)
-            `)
-            .eq('id', id)
-            .single();
-
-        if (error) {
-            console.error(error);
-            // Alert removed to prevent loop, redirect handled
-            router.back();
-        } else {
-            setIntervention(data);
-        }
-        setLoading(false);
-    };
-
     const updateMechanic = async (userId: string) => {
-        const { error } = await supabase
-            .from('interventions')
-            .update({ mecanicien_id: userId })
-            .eq('id', id);
-
-        if (!error) {
+        try {
+            await assignMechanic.mutateAsync({ interventionId: id!, mecanicienId: userId });
             setShowMechanicModal(false);
-            fetchInterventionDetails();
-        } else {
+            // Also refetch the single intervention to update the detail view
+            qc.invalidateQueries({ queryKey: ['intervention', id] });
+        } catch {
             alert('Erreur lors de l\'affectation');
         }
     };
@@ -119,7 +97,7 @@ export default function InterventionDetailScreen() {
         </View>
     );
 
-    const getStatusColor = (status: string) => {
+    const getStatusColor = (status: string | undefined) => {
         switch (status) {
             case 'planifiee': return 'bg-blue-600';
             case 'en_cours': return 'bg-orange-600';
@@ -138,7 +116,7 @@ export default function InterventionDetailScreen() {
         </TouchableOpacity>
     );
 
-    if (loading) {
+    if (isLoading) {
         return (
             <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center">
                 <ActivityIndicator size="large" color="#3b82f6" />
@@ -159,7 +137,7 @@ export default function InterventionDetailScreen() {
 
             {/* Content */}
             <View className="flex-1">
-                {activeTab === 'summary' && <InterventionSummary intervention={intervention} refresh={fetchInterventionDetails} />}
+                {activeTab === 'summary' && <InterventionSummary intervention={intervention} refresh={refetch} />}
                 {activeTab === 'parts' && <InterventionParts intervention={intervention} />}
                 {activeTab === 'photos' && <InterventionPhotos intervention={intervention} />}
             </View>
@@ -180,7 +158,7 @@ export default function InterventionDetailScreen() {
                             </TouchableOpacity>
                         </View>
                         <ScrollView showsVerticalScrollIndicator={false}>
-                            {users.map((user) => (
+                            {users.map((user: any) => (
                                 <TouchableOpacity
                                     key={user.id}
                                     onPress={() => updateMechanic(user.id)}
