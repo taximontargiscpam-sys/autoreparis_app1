@@ -40,6 +40,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Dashboard',
+          tabBarAccessibilityLabel: 'Tableau de bord',
           tabBarIcon: ({ color }) => <TabBarIcon icon={LayoutDashboard} color={color} />,
         }}
       />
@@ -47,6 +48,7 @@ export default function TabLayout() {
         name="planning"
         options={{
           title: 'Planning',
+          tabBarAccessibilityLabel: 'Planning et Rendez-vous',
           tabBarIcon: ({ color }) => <TabBarIcon icon={Calendar} color={color} />,
         }}
       />
@@ -54,6 +56,7 @@ export default function TabLayout() {
         name="interventions"
         options={{
           title: 'Atelier',
+          tabBarAccessibilityLabel: 'Gestion de l\'atelier',
           tabBarIcon: ({ color }) => <TabBarIcon icon={Wrench} color={color} />,
         }}
       />
@@ -61,6 +64,7 @@ export default function TabLayout() {
         name="clients"
         options={{
           title: 'Clients',
+          tabBarAccessibilityLabel: 'Liste des clients',
           tabBarIcon: ({ color }) => <TabBarIcon icon={Users} color={color} />,
         }}
       />
@@ -68,6 +72,7 @@ export default function TabLayout() {
         name="stock"
         options={{
           title: 'Stocks',
+          tabBarAccessibilityLabel: 'Gestion des stocks',
           tabBarIcon: ({ color }) => <TabBarIcon icon={Package} color={color} />,
         }}
       />
@@ -75,6 +80,7 @@ export default function TabLayout() {
         name="leads"
         options={{
           title: 'Demandes',
+          tabBarAccessibilityLabel: 'Demandes de devis et contacts',
           tabBarIcon: ({ color }) => <TabBarIcon icon={Inbox} color={color} />,
         }}
       />
