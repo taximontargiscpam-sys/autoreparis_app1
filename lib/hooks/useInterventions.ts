@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { InterventionStatus, InterventionWithRelations } from '../database.types';
 import { supabase } from '../supabase';
-import type { InterventionWithRelations, InterventionStatus } from '../database.types';
 
 const PAGE_SIZE = 30;
 
@@ -17,7 +17,7 @@ export function useInterventions(page = 0) {
           *,
           clients (nom, prenom, telephone, email),
           vehicles (marque, modele, immatriculation),
-          mecanicien:users(nom, prenom)
+          mecanicien:users(id, nom, prenom)
         `, { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(from, to);
@@ -39,7 +39,7 @@ export function useIntervention(id: string | undefined) {
           *,
           clients (nom, prenom, telephone, email),
           vehicles (marque, modele, immatriculation, kilometrage),
-          mecanicien:users(nom, prenom)
+          mecanicien:users(id, nom, prenom)
         `)
         .eq('id', id!)
         .single();

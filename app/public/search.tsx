@@ -1,20 +1,18 @@
-import { ArrowRight, Search, ArrowLeft } from 'lucide-react-native';
+import { useVehicleSearch } from '@/lib/hooks/useVehicleSearch';
+import { useRouter } from 'expo-router';
+import { ArrowLeft, ArrowRight, Search } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
   SafeAreaView,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useVehicleSearch } from '@/lib/hooks/useVehicleSearch';
 
 export default function PublicSearchScreen() {
   const [immatriculation, setImmatriculation] = useState('');
@@ -43,11 +41,11 @@ export default function PublicSearchScreen() {
         <SafeAreaView className="flex-1">
           {/* Header */}
           <View className="px-6 pt-4">
-             <TouchableOpacity
-                onPress={() => router.back()}
-                className="w-10 h-10 bg-slate-800 rounded-full items-center justify-center border border-slate-700"
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="w-10 h-10 bg-slate-800 rounded-full items-center justify-center border border-slate-700"
             >
-                <ArrowLeft color="white" size={20} />
+              <ArrowLeft color="white" size={20} />
             </TouchableOpacity>
           </View>
 
@@ -68,33 +66,35 @@ export default function PublicSearchScreen() {
               </Text>
 
               <View className="flex-row items-center bg-slate-900 border border-slate-700 rounded-2xl h-16 px-4 mb-6">
-                 {/* Plate Icon or Country Strip could go here for style */}
-                 <View className="w-4 h-8 bg-blue-700 rounded-sm mr-4" />
+                {/* Plate Icon or Country Strip could go here for style */}
+                <View className="w-4 h-8 bg-blue-700 rounded-sm mr-4" />
 
-                 <TextInput
-                    className="flex-1 text-white text-2xl font-bold uppercase tracking-widest"
-                    placeholder="AA-123-BB"
-                    placeholderTextColor="#475569"
-                    value={immatriculation}
-                    onChangeText={setImmatriculation}
-                    autoCapitalize="characters"
-                    autoCorrect={false}
-                    onSubmitEditing={handleSearch}
-                 />
+                <TextInput
+                  className="flex-1 text-white text-2xl font-bold uppercase tracking-widest"
+                  placeholder="AA-123-BB"
+                  placeholderTextColor="#475569"
+                  value={immatriculation}
+                  onChangeText={setImmatriculation}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  onSubmitEditing={handleSearch}
+                />
               </View>
 
               <TouchableOpacity
                 onPress={handleSearch}
                 disabled={loading}
                 className={`h-14 rounded-2xl flex-row items-center justify-center ${loading ? 'bg-slate-700' : 'bg-blue-600'} shadow-lg shadow-blue-600/20`}
+                accessibilityLabel="Lancer la recherche"
+                accessibilityHint="Recherche le véhicule avec la plaque saisie"
               >
                 {loading ? (
-                    <ActivityIndicator color="white" />
+                  <ActivityIndicator color="white" />
                 ) : (
-                    <>
-                        <Text className="text-white font-bold text-lg mr-2">Rechercher</Text>
-                        <ArrowRight size={20} color="white" />
-                    </>
+                  <>
+                    <Text className="text-white font-bold text-lg mr-2">Rechercher</Text>
+                    <ArrowRight size={20} color="white" />
+                  </>
                 )}
               </TouchableOpacity>
             </View>

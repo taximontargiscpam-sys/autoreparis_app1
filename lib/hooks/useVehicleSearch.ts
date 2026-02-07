@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { supabase } from '../supabase';
 
 const RATE_LIMIT_MS = 2000; // 2 seconds between searches
@@ -27,38 +27,23 @@ export function useVehicleSearch() {
 
     setLoading(true);
     try {
-      // Find vehicle
-      const { data: vehicle, error: vError } = await supabase
-        .from('vehicles')
-        .select('id')
-        .ilike('immatriculation', cleanPlate)
-        .limit(1)
-        .maybeSingle();
+      // Use secure RPC instead of direct table access
+      const { data: interventionId, error: rpcError } = await supabase
+        .rpc('get_vehicle_status_public', { plate_text: cleanPlate });
 
-      if (vError) throw vError;
-      if (!vehicle) {
-        setError("Véhicule introuvable. Vérifiez l'immatriculation.");
+      if (rpcError) throw rpcError;
+
+      if (!interventionId) {
+        setError("Aucun véhicule ou intervention trouvée pour cette plaque.");
         return null;
       }
 
-      // Find latest intervention
-      const { data: intervention, error: iError } = await supabase
-        .from('interventions')
-        .select('id')
-        .eq('vehicle_id', vehicle.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (iError) throw iError;
-      if (!intervention) {
-        setError("Aucune intervention trouvée pour ce véhicule.");
-        return null;
-      }
-
-      return intervention.id;
+      return interventionId;
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue.');
+      if (__DEV__) {
+        console.error('Search error:', err);
+      }
+      setError('Impossible de vérifier le statut. Veuillez réessayer.');
       return null;
     } finally {
       setLoading(false);

@@ -1,8 +1,8 @@
-import { Image, Text, TouchableOpacity, View, ScrollView, Linking } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Car, Wrench, ArrowRight, Lock, Phone, ShieldCheck, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { ArrowRight, Car, Lock, MapPin, Phone, ShieldCheck, Wrench } from 'lucide-react-native';
+import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PublicHomeScreen() {
     const router = useRouter();
@@ -59,6 +59,8 @@ export default function PublicHomeScreen() {
                             <TouchableOpacity
                                 onPress={() => router.push('/public/search')}
                                 className="bg-blue-600 h-14 rounded-xl flex-row items-center justify-center shadow-lg shadow-blue-900/50 active:bg-blue-700"
+                                accessibilityLabel="Accéder au suivi de réparation"
+                                accessibilityHint="Ouvre l'écran de recherche par plaque d'immatriculation"
                             >
                                 <Text className="text-white font-bold text-lg mr-2">Accéder au Suivi</Text>
                                 <ArrowRight size={20} color="white" />
@@ -107,6 +109,8 @@ export default function PublicHomeScreen() {
                             activeOpacity={0.8}
                             onPress={() => Linking.openURL('tel:0974999957')}
                             className="bg-slate-900 rounded-2xl p-5 flex-row items-center border border-slate-800"
+                            accessibilityLabel="Appeler AutoReparis"
+                            accessibilityHint="Compose le 09 74 99 99 57"
                         >
                             <View className="w-10 h-10 bg-slate-800 rounded-full items-center justify-center mr-4">
                                 <Phone size={20} color="#94a3b8" />
@@ -133,11 +137,11 @@ export default function PublicHomeScreen() {
 
                     {/* Legal Links - Required by Apple */}
                     <View className="flex-row justify-center items-center mb-6 gap-4">
-                        <TouchableOpacity onPress={() => Linking.openURL('https://autoreparis-legal.vercel.app/politique-de-confidentialite.html')}>
+                        <TouchableOpacity onPress={() => Linking.openURL('https://autoreparis.github.io/legal/politique-de-confidentialite.html')}>
                             <Text className="text-slate-600 text-[10px] underline">Politique de confidentialité</Text>
                         </TouchableOpacity>
                         <Text className="text-slate-700 text-[10px]">•</Text>
-                        <TouchableOpacity onPress={() => Linking.openURL('https://autoreparis-legal.vercel.app/conditions-utilisation.html')}>
+                        <TouchableOpacity onPress={() => Linking.openURL('https://autoreparis.github.io/legal/conditions-utilisation.html')}>
                             <Text className="text-slate-600 text-[10px] underline">Conditions d'utilisation</Text>
                         </TouchableOpacity>
                     </View>

@@ -1,6 +1,6 @@
-import { useLeads, useDeleteLead } from '@/lib/hooks/useLeads';
-import { supabaseWebsite } from '@/lib/supabaseWebsite';
 import type { DevisAuto } from '@/lib/database.types';
+import { useDeleteLead, useLeads } from '@/lib/hooks/useLeads';
+import { supabaseWebsite } from '@/lib/supabaseWebsite';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Phone, Search, Trash2 } from 'lucide-react-native';
@@ -65,7 +65,7 @@ export default function LeadsScreen() {
     };
 
     const renderItem = ({ item }: { item: DevisAuto }) => {
-        const statusInfo = getStatusInfo(item.statut);
+        const statusInfo = getStatusInfo(item.statut || '');
         // Map fields that might be French or English
         const firstName = item.prenom || (item as any).prénom || 'Prospect';
         const lastName = item.nom || '';

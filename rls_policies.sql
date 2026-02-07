@@ -222,18 +222,9 @@ CREATE POLICY "activity_log_insert" ON public.activity_log
 -- =====================================================
 -- PUBLIC ACCESS for vehicle tracking (anon users)
 -- =====================================================
--- Allow anonymous users to search vehicles by plate
-CREATE POLICY "vehicles_public_read" ON public.vehicles
-  FOR SELECT USING (true);
+-- ❌ REMOVED: Direct table access for anonymous users is insecure.
+-- We now use SECURITY DEFINER RPC functions:
+-- 1. get_vehicle_status_public(plate)
+-- 2. get_intervention_details_public(id)
+-- see rpc_secure_functions.sql
 
--- Allow anonymous users to read interventions (for tracking)
-CREATE POLICY "interventions_public_read" ON public.interventions
-  FOR SELECT USING (true);
-
--- Allow anonymous users to read intervention lines (for tracking detail)
-CREATE POLICY "intervention_lines_public_read" ON public.intervention_lines
-  FOR SELECT USING (true);
-
--- Allow anonymous users to read vehicle photos (for tracking)
-CREATE POLICY "vehicle_photos_public_read" ON public.vehicle_photos
-  FOR SELECT USING (true);

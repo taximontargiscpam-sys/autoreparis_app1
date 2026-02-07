@@ -95,13 +95,14 @@ export interface Intervention {
   total_achat: number;
   total_vente: number;
   marge_totale: number;
+  total_ttc: number | null; // Added field
   created_at: string;
 }
 
 export interface InterventionWithRelations extends Intervention {
   clients: Pick<Client, 'nom' | 'prenom' | 'telephone' | 'email'> | null;
   vehicles: Pick<Vehicle, 'marque' | 'modele' | 'immatriculation'> | null;
-  mecanicien: Pick<User, 'nom' | 'prenom'> | null;
+  mecanicien: Pick<User, 'id' | 'nom' | 'prenom'> | null; // Added id
 }
 
 export interface InterventionLine {

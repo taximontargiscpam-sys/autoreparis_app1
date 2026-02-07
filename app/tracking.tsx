@@ -1,17 +1,17 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Calendar, CheckCircle, Clock, Hammer, Image as ImageIcon, Info, User, Wrench } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { handleError } from '../lib/errorHandler';
 
 const { width } = Dimensions.get('window');
 
 async function fetchInterventionData(targetId: string) {
-    const { data, error } = await supabase
+    // 1. Try to fetch as authenticated user (RLS will allow if logged in)
+    const { data: authData, error: authError } = await supabase
         .from('interventions')
         .select(`
             *,
@@ -23,8 +23,17 @@ async function fetchInterventionData(targetId: string) {
         .eq('id', targetId)
         .single();
 
-    if (error) throw error;
-    return data;
+    if (!authError && authData) {
+        return authData;
+    }
+
+    // 2. Fallback: Use Public RPC if anonymous or auth failed (and not a permission error we want to block)
+    // The RPC returns a JSON object that matches the structure we need
+    const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_intervention_details_public', { intervention_id: targetId });
+
+    if (rpcError) throw rpcError;
+    return rpcData;
 }
 
 function generateTimeline(data: any) {

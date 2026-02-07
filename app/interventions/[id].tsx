@@ -1,7 +1,6 @@
 import InterventionParts from '@/components/intervention/InterventionParts';
 import InterventionPhotos from '@/components/intervention/InterventionPhotos';
 import InterventionSummary from '@/components/intervention/InterventionSummary';
-import type { InterventionWithRelations } from '@/lib/database.types';
 import { useAssignMechanic, useIntervention } from '@/lib/hooks/useInterventions';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -120,6 +119,17 @@ export default function InterventionDetailScreen() {
         return (
             <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center">
                 <ActivityIndicator size="large" color="#3b82f6" />
+            </SafeAreaView>
+        );
+    }
+
+    if (!intervention) {
+        return (
+            <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center">
+                <Text className="text-slate-500 font-bold">Intervention introuvable</Text>
+                <TouchableOpacity onPress={() => router.back()} className="mt-4 bg-slate-200 dark:bg-slate-800 px-6 py-2 rounded-full">
+                    <Text className="text-slate-700 dark:text-slate-300">Retour</Text>
+                </TouchableOpacity>
             </SafeAreaView>
         );
     }
