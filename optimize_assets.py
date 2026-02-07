@@ -18,8 +18,13 @@ def optimize_icon():
         if img.size != (1024, 1024):
             img = img.resize((1024, 1024), Image.Resampling.LANCZOS)
             
+        # Aggressive optimization: Quantize to 256 colors (8-bit palette)
+        # This significantly reduces size while maintaining visual quality for many icons.
+        # This is similar to what TinyPNG does.
+        img_quantized = img.quantize(colors=256, method=2) # 2=FASTOCTREE
+            
         # Save with optimization
-        img.save(source_path, 'PNG', optimize=True, compress_level=9)
+        img_quantized.save(source_path, 'PNG', optimize=True, compress_level=9)
         
         new_size = os.path.getsize(source_path) / 1024
         print(f"Optimized Icon Size: {new_size:.2f} KB")
