@@ -2,16 +2,14 @@ import { useDashboardStats } from '@/lib/hooks/useInterventions';
 import { useRouter } from 'expo-router';
 import { AlertTriangle, Plus, ScanBarcode, TrendingUp, Users, Wrench } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { Dimensions, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
-  const { data, isLoading, refetch } = useDashboardStats();
+  const { data, refetch } = useDashboardStats();
 
   const stats = data ?? {
     interventionsCount: 0,
@@ -72,7 +70,7 @@ export default function DashboardScreen() {
               </Text>
               <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Auto Reparis</Text>
             </View>
-            <TouchableOpacity onPress={() => router.push('/profile')} className="w-10 h-10 bg-white dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 items-center justify-center shadow-sm active:scale-95">
+            <TouchableOpacity onPress={() => router.push('/profile')} accessibilityLabel="Profil" accessibilityRole="button" className="w-10 h-10 bg-white dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 items-center justify-center shadow-sm active:scale-95">
               <Users size={18} className="text-slate-900 dark:text-white" />
             </TouchableOpacity>
           </View>
@@ -86,7 +84,6 @@ export default function DashboardScreen() {
               color="bg-secondary"
               delay={100}
               onPress={() => router.push('/(tabs)/interventions')}
-              trend="+2"
             />
             <KPICard
               title="CA Hebdo"
@@ -95,7 +92,6 @@ export default function DashboardScreen() {
               color="bg-secondary"
               delay={200}
               onPress={() => router.push('/performance')}
-              trend="+12%"
             />
             <KPICard
               title="Demandes"
@@ -104,7 +100,6 @@ export default function DashboardScreen() {
               color="bg-secondary"
               delay={300}
               onPress={() => router.push('/(tabs)/leads')}
-              trend="+5"
             />
             <KPICard
               title="Stock Faible"
@@ -151,6 +146,8 @@ export default function DashboardScreen() {
             <View className="flex-row gap-4">
               <TouchableOpacity
                 onPress={() => router.push('/interventions/new')}
+                accessibilityLabel="Nouvelle intervention"
+                accessibilityRole="button"
                 className="flex-1 bg-slate-900 dark:bg-white h-[72px] rounded-[24px] flex-row items-center justify-center shadow-lg shadow-slate-900/20 active:scale-[0.98]"
               >
                 <View className="w-8 h-8 rounded-full bg-white/20 dark:bg-black/10 items-center justify-center mr-3">
@@ -161,6 +158,8 @@ export default function DashboardScreen() {
 
               <TouchableOpacity
                 onPress={() => router.push('/scan')}
+                accessibilityLabel="Scanner un code-barres"
+                accessibilityRole="button"
                 className="w-[72px] h-[72px] bg-blue-600 rounded-[24px] items-center justify-center shadow-lg shadow-blue-500/30 active:scale-[0.98]"
               >
                 <ScanBarcode size={24} className="text-white" />

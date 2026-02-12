@@ -4,7 +4,8 @@ import type { User, TeamAvailability, InterventionWithRelations } from '@/lib/da
 import { addDays, addMonths, eachDayOfInterval, endOfMonth, format, isSameDay, startOfMonth, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, RefreshControl, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PlanningScreen() {
     // Basic Data
@@ -49,8 +50,6 @@ export default function PlanningScreen() {
     const userModalMonthEnd = format(endOfMonth(userModalMonth), 'yyyy-MM-dd');
     const {
         data: serverMonthlyAvailability = [],
-        isLoading: isLoadingMonthly,
-        refetch: refetchMonthlyAvailability,
     } = useUserMonthlyAvailability(
         selectedUser?.id,
         userModalMonthStart,
@@ -153,7 +152,6 @@ export default function PlanningScreen() {
             Alert.alert("Succ\u00e8s", "Disponibilit\u00e9s mises \u00e0 jour !");
             setShowUserModal(false);
         } catch (err: any) {
-            console.error("Save error:", err);
             let msg = err.message || 'Erreur inconnue';
             // Handle common Supabase errors
             if (err.code === '23503') msg = "Cet employ\u00e9 n'existe pas valides en base (FK Violation).";
@@ -181,8 +179,7 @@ export default function PlanningScreen() {
             setShowAssignModal(false);
             setSelectedInterventionId(null);
             setSelectedMechanicId(null);
-        } catch (err) {
-            console.error('Error assigning:', err);
+        } catch (_err) {
             Alert.alert('Erreur', "Echec de l'assignation");
         }
     };

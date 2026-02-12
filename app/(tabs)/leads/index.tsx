@@ -9,14 +9,13 @@ import { FlatList, Linking, RefreshControl, Text, TextInput, TouchableOpacity, V
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 
 export default function LeadsScreen() {
-    const router = useRouter();
     const [refreshing, setRefreshing] = useState(false);
     const [search, setSearch] = useState('');
 
-    const { data, isLoading, refetch } = useLeads(search);
+    const { data, refetch } = useLeads(search);
     const leads = data ?? [];
 
     const deleteLead = useDeleteLead();
@@ -42,7 +41,7 @@ export default function LeadsScreen() {
         deleteLead.mutate(id);
     };
 
-    const getStatusInfo = (status: string) => {
+    const getStatusInfo = (status: string | null) => {
         switch (status) {
             case 'nouveau': return { color: 'bg-blue-500', text: 'Nouveau', textColor: 'text-blue-100' };
             case 'contacte': return { color: 'bg-orange-500', text: 'Contacté', textColor: 'text-orange-100' };
@@ -65,7 +64,7 @@ export default function LeadsScreen() {
     };
 
     const renderItem = ({ item }: { item: DevisAuto }) => {
-        const statusInfo = getStatusInfo(item.statut || '');
+        const statusInfo = getStatusInfo(item.statut || 'nouveau');
         // Map fields that might be French or English
         const firstName = item.prenom || (item as any).prénom || 'Prospect';
         const lastName = item.nom || '';

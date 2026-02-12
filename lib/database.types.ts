@@ -102,7 +102,7 @@ export interface Intervention {
 export interface InterventionWithRelations extends Intervention {
   clients: Pick<Client, 'nom' | 'prenom' | 'telephone' | 'email'> | null;
   vehicles: Pick<Vehicle, 'marque' | 'modele' | 'immatriculation'> | null;
-  mecanicien: Pick<User, 'id' | 'nom' | 'prenom'> | null; // Added id
+  mecanicien: Pick<User, 'id' | 'nom' | 'prenom'> | null;
 }
 
 export interface InterventionLine {

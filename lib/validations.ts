@@ -87,7 +87,7 @@ export const passwordSchema = z.object({
 });
 
 // --- Helper to extract first error message ---
-export function getValidationError(result: any): string | null {
+export function getValidationError(result: { success: boolean; error?: { issues: Array<{ message: string }> } }): string | null {
   if (result.success) return null;
-  return result.error.issues[0]?.message ?? 'Validation échouée';
+  return result.error?.issues[0]?.message ?? 'Validation échouée';
 }

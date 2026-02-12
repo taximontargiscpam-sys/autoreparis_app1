@@ -102,7 +102,7 @@ CREATE POLICY "vehicles_delete" ON public.vehicles
   FOR DELETE USING (public.is_admin());
 
 -- =====================================================
--- PRODUCTS: all read, write roles modify, admin delete
+-- PRODUCTS: authenticated read, write roles modify, admin delete
 -- =====================================================
 CREATE POLICY "products_select" ON public.products
   FOR SELECT USING (auth.role() = 'authenticated');
@@ -115,6 +115,10 @@ CREATE POLICY "products_update" ON public.products
 
 CREATE POLICY "products_delete" ON public.products
   FOR DELETE USING (public.is_admin());
+
+-- NOTE: Any existing 'Public Access' policy on products must be dropped.
+-- Run this in your Supabase SQL Editor to remove it:
+-- DROP POLICY IF EXISTS "Public Access" ON public.products;
 
 -- =====================================================
 -- INTERVENTIONS: all read, write roles modify, admin delete

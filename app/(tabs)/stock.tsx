@@ -76,7 +76,7 @@ export default function StockScreen() {
                     <Text className="text-slate-900 dark:text-white font-black text-3xl">Stock</Text>
                     <Text className="text-slate-500 text-sm font-medium">Gérez vos produits et équipements</Text>
                 </View>
-                <TouchableOpacity onPress={() => router.push('/scan')} className="bg-slate-100 dark:bg-slate-800 p-3 rounded-full">
+                <TouchableOpacity onPress={() => router.push('/scan')} accessibilityLabel="Scanner un produit" accessibilityRole="button" className="bg-slate-100 dark:bg-slate-800 p-3 rounded-full">
                     <ScanLine size={24} color="#0f172a" />
                 </TouchableOpacity>
             </View>

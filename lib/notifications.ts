@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -13,9 +14,7 @@ Notifications.setNotificationHandler({
     }),
 });
 
-export async function registerForPushNotificationsAsync() {
-    let token;
-
+export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
     if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
             name: 'default',
@@ -25,25 +24,27 @@ export async function registerForPushNotificationsAsync() {
         });
     }
 
-    if (Device.isDevice) {
-        const { status: existingStatus } = await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
-        if (existingStatus !== 'granted') {
-            const { status } = await Notifications.requestPermissionsAsync();
-            finalStatus = status;
-        }
-        if (finalStatus !== 'granted') {
-            console.log('Permission not granted for push notifications');
-            return;
-        }
-
-        // Project ID is not strictly required for local notifications but good habit
-        // token = (await Notifications.getExpoPushTokenAsync({ projectId: ... })).data;
-    } else {
-        console.log('Must use physical device for Push Notifications (Simulator is limited)');
+    if (!Device.isDevice) {
+        return undefined;
     }
 
-    return token;
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+        return undefined;
+    }
+
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    if (projectId) {
+        const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+        return token;
+    }
+
+    return undefined;
 }
 
 export async function sendLocalNotification(title: string, body: string, data = {}) {
@@ -54,6 +55,6 @@ export async function sendLocalNotification(title: string, body: string, data = 
             data,
             sound: true,
         },
-        trigger: null as any, // Immediate notification
+        trigger: null as any,
     });
 }

@@ -7,7 +7,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Camera, FileText, User, Wrench, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function InterventionDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -147,9 +148,9 @@ export default function InterventionDetailScreen() {
 
             {/* Content */}
             <View className="flex-1">
-                {activeTab === 'summary' && <InterventionSummary intervention={intervention} refresh={refetch} />}
-                {activeTab === 'parts' && <InterventionParts intervention={intervention} />}
-                {activeTab === 'photos' && <InterventionPhotos intervention={intervention} />}
+                {activeTab === 'summary' && intervention && <InterventionSummary intervention={intervention!} refresh={refetch} />}
+                {activeTab === 'parts' && intervention && <InterventionParts intervention={intervention!} />}
+                {activeTab === 'photos' && intervention && <InterventionPhotos intervention={intervention!} />}
             </View>
 
             {/* Mechanic Selection Modal */}

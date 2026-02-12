@@ -3,7 +3,7 @@ import type { Product } from '@/lib/database.types';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { Box, Check, Info, Plus, X } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type ScanResult = {
@@ -22,23 +22,20 @@ export default function CameraScreen() {
     const { data: foundProduct, isLoading: lookupLoading } = useProductByBarcode(scannedCode);
     const updateStock = useUpdateStock();
 
-    // When the barcode query resolves, update scanResult
     const handleBarCodeScanned = useCallback(({ data }: { data: string }) => {
         if (scanned) return;
         setScanned(true);
         setScannedCode(data);
     }, [scanned]);
 
-    // React to query result changes: once lookup finishes, show the result panel
-    // We use a small effect-like pattern driven by state transitions
-    const isLookupDone = scannedCode !== undefined && !lookupLoading;
-    if (isLookupDone && !scanResult) {
+    useEffect(() => {
+        if (scannedCode === undefined || lookupLoading || scanResult) return;
         if (foundProduct) {
-            setScanResult({ type: 'found', product: foundProduct, code: scannedCode! });
+            setScanResult({ type: 'found', product: foundProduct, code: scannedCode });
         } else {
-            setScanResult({ type: 'unknown', product: null, code: scannedCode! });
+            setScanResult({ type: 'unknown', product: null, code: scannedCode });
         }
-    }
+    }, [scannedCode, lookupLoading, foundProduct, scanResult]);
 
     const handleReset = () => {
         setScanResult(null);
