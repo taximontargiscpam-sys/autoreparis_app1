@@ -24,7 +24,10 @@
       "ios": {
         "appleId": "amirpro@hotmail.fr",
         "appleTeamId": "BV2C6322V3",
-        "ascAppId": "6757646990"
+        "ascAppId": "6757646990",
+        "ascApiKeyId": "C2G27ANQC7",
+        "ascApiKeyIssuerId": "20260351-be55-465f-af4d-11200a82d927",
+        "ascApiKeyPath": "/Users/mike/Downloads/AuthKey_C2G27ANQC7.p8"
       }
     }
   }

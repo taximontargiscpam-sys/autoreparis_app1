@@ -6,14 +6,14 @@
         "title": "AutoReparis OS",
         "subtitle": "Gestion d'atelier automobile",
         "description": "AutoReparis OS est l'application professionnelle de gestion d'atelier pour le garage Auto Reparis à Drancy.\n\nFonctionnalités principales :\n\n• Tableau de bord temps réel — Suivez les interventions en cours, le chiffre d'affaires hebdomadaire, les demandes clients et l'état des stocks en un coup d'œil.\n\n• Gestion des interventions — Créez, planifiez et suivez chaque réparation de A à Z. Assignez un mécanicien, ajoutez des pièces, uploadez des photos et gérez les statuts.\n\n• Planning connecté — Calendrier d'équipe avec gestion des disponibilités (présent, repos, congé). Planifiez les rendez-vous et assignez les mécaniciens directement.\n\n• Gestion des clients — Base de données clients avec véhicules associés, historique des interventions et coordonnées.\n\n• Stock & Scanner — Gérez votre inventaire par catégorie (mécanique, carrosserie, entretien, pneus, batteries). Scannez les codes-barres pour ajouter rapidement des pièces.\n\n• Suivi client — Vos clients peuvent suivre l'avancement de leur réparation en temps réel via leur plaque d'immatriculation.\n\n• Demandes web — Recevez et gérez les demandes de devis provenant de votre site web en temps réel avec notifications push.\n\n• Analyses de performance — Visualisez votre chiffre d'affaires sur 30 jours avec détail quotidien.\n\nConçue pour les professionnels de la réparation automobile, AutoReparis OS simplifie la gestion quotidienne de votre garage.",
-        "keywords": "garage,réparation,mécanique,atelier,gestion,automobile,intervention,planning,stock,devis,voiture,carrosserie",
-        "promotionalText": "Gérez votre atelier automobile comme un pro. Interventions, planning, stocks et suivi client — tout dans une seule app.",
-        "whatsNew": "Première version de l'application AutoReparis OS.\n- Tableau de bord avec KPI en temps réel\n- Gestion complète des interventions\n- Planning d'équipe connecté\n- Scanner de codes-barres pour le stock\n- Suivi client par plaque d'immatriculation\n- Notifications push pour les demandes web"
+        "keywords": ["garage", "réparation", "mécanique", "atelier", "gestion", "automobile", "planning", "stock", "devis", "voiture", "carrosserie"],
+        "promoText": "Gérez votre atelier automobile comme un pro. Interventions, planning, stocks et suivi client — tout dans une seule app.",
+        "releaseNotes": "Première version de l'application AutoReparis OS.\n- Tableau de bord avec KPI en temps réel\n- Gestion complète des interventions\n- Planning d'équipe connecté\n- Scanner de codes-barres pour le stock\n- Suivi client par plaque d'immatriculation\n- Notifications push pour les demandes web",
+        "privacyPolicyUrl": "https://autoreparis-legal.vercel.app/politique-de-confidentialite.html"
       }
     },
     "categories": ["BUSINESS", "PRODUCTIVITY"],
     "copyright": "2026 AutoReparis",
-    "privacyPolicyUrl": "https://autoreparis-legal.vercel.app/politique-de-confidentialite.html",
     "advisory": {
       "alcoholTobaccoOrDrugUseOrReferences": "NONE",
       "contests": "NONE",
@@ -29,7 +29,9 @@
       "violenceRealisticProlongedGraphicOrSadistic": "NONE",
       "gambling": false,
       "unrestrictedWebAccess": false,
-      "kidsAgeBand": null
+      "kidsAgeBand": null,
+      "ageRatingOverride": "NONE",
+      "koreaAgeRatingOverride": "NONE"
     }
   }
 }
