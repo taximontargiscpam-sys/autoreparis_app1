@@ -9,11 +9,21 @@
         "keywords": ["garage", "réparation", "mécanique", "atelier", "gestion", "automobile", "planning", "stock", "devis", "voiture", "carrosserie"],
         "promoText": "Gérez votre atelier automobile comme un pro. Interventions, planning, stocks et suivi client — tout dans une seule app.",
         "releaseNotes": "Première version de l'application AutoReparis OS.\n- Tableau de bord avec KPI en temps réel\n- Gestion complète des interventions\n- Planning d'équipe connecté\n- Scanner de codes-barres pour le stock\n- Suivi client par plaque d'immatriculation\n- Notifications push pour les demandes web",
-        "privacyPolicyUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html"
+        "privacyPolicyUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html",
+        "termsOfServiceUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html"
       }
     },
     "categories": ["BUSINESS", "PRODUCTIVITY"],
     "copyright": "2026 AutoReparis",
+    "reviewDetails": {
+      "firstName": "Bilel",
+      "lastName": "Younes",
+      "phone": "+33600000000",
+      "email": "amirpro@hotmail.fr",
+      "demoUsername": "review@autoreparis.com",
+      "demoPassword": "AppleReview2026!",
+      "notes": "AutoReparis OS est une application B2B de gestion de garage automobile, réservée au personnel du garage Auto Reparis à Drancy (93). L'accès nécessite un compte.\n\nPour tester :\n1. Connectez-vous avec les identifiants de démonstration ci-dessus\n2. Le tableau de bord affiche les KPI en temps réel\n3. Naviguez via les 6 onglets en bas\n\nSuppression de compte :\n1. Depuis le tableau de bord, appuyez sur l'icône utilisateur en haut à droite\n2. Scrollez jusqu'en bas de la page Profil\n3. Appuyez sur « Supprimer mon compte » (texte rouge)\n4. Confirmez la suppression dans la boîte de dialogue"
+    },
     "advisory": {
       "alcoholTobaccoOrDrugUseOrReferences": "NONE",
       "contests": "NONE",
