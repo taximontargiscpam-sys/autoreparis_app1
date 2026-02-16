@@ -1,9 +1,9 @@
 
-import { useClients, useDeleteClient } from '@/lib/hooks/useClients';
+import { useInfiniteClients, useDeleteClient } from '@/lib/hooks/useClients';
 import type { Client } from '@/lib/database.types';
 import { useRouter } from 'expo-router';
 import { Plus, Search, Trash2, User } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,10 +13,10 @@ export default function ClientsScreen() {
     const [search, setSearch] = useState('');
     const [refreshing, setRefreshing] = useState(false);
 
-    const { data, isLoading, refetch } = useClients(search);
+    const { data, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteClients(search);
     const deleteClient = useDeleteClient();
 
-    const clients = data?.data ?? [];
+    const clients = useMemo(() => data?.pages.flatMap(p => p.data) ?? [], [data?.pages]);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -109,6 +109,13 @@ export default function ClientsScreen() {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={{ padding: 24, paddingTop: 0 }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                    onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+                    onEndReachedThreshold={0.3}
+                    ListFooterComponent={isFetchingNextPage ? (
+                        <View className="py-4 items-center">
+                            <ActivityIndicator size="small" color="#2563eb" />
+                        </View>
+                    ) : null}
                     ListEmptyComponent={
                         <View className="items-center mt-20">
                             <Text className="text-slate-400 text-center">Aucun client trouve.</Text>

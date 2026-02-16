@@ -1,14 +1,18 @@
 import { StatusBadge } from '@/components/StatusBadge';
-import { useDeleteIntervention, useInterventions } from '@/lib/hooks/useInterventions';
+import { useDeleteIntervention, useInfiniteInterventions } from '@/lib/hooks/useInterventions';
 import type { InterventionWithRelations } from '@/lib/database.types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useRouter } from 'expo-router';
 import { Calendar, Filter, Plus, Search, Trash2, Wrench } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+type SectionRow =
+    | { type: 'header'; title: string; count: number; color: string }
+    | { type: 'item'; item: InterventionWithRelations };
 
 export default function InterventionsScreen() {
     const router = useRouter();
@@ -16,19 +20,41 @@ export default function InterventionsScreen() {
     const [search, setSearch] = useState('');
     const [activeFilter, setActiveFilter] = useState('Tous');
 
-    const { data, isLoading, refetch } = useInterventions();
+    const { data, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteInterventions();
     const { mutate: deleteIntervention } = useDeleteIntervention();
 
+    const allInterventions: InterventionWithRelations[] = useMemo(() => {
+        return data?.pages.flatMap(p => p.data) ?? [];
+    }, [data?.pages]);
+
     const interventions: InterventionWithRelations[] = useMemo(() => {
-        const all = data?.data ?? [];
-        if (!search.trim()) return all;
+        if (!search.trim()) return allInterventions;
         const q = search.toLowerCase();
-        return all.filter((i) => {
+        return allInterventions.filter((i) => {
             const clientName = i.clients ? `${i.clients.nom} ${i.clients.prenom ?? ''}` : '';
             const vehicleName = i.vehicles ? `${i.vehicles.marque} ${i.vehicles.modele} ${i.vehicles.immatriculation ?? ''}` : '';
             return clientName.toLowerCase().includes(q) || vehicleName.toLowerCase().includes(q);
         });
-    }, [data?.data, search]);
+    }, [allInterventions, search]);
+
+    const sectionData: SectionRow[] = useMemo(() => {
+        const sections: { title: string; value: string; color: string }[] = [
+            { title: 'En Cours', value: 'en_cours', color: 'text-orange-500' },
+            { title: 'Planifiées', value: 'planifiee', color: 'text-blue-500' },
+            { title: 'Terminées', value: 'terminee', color: 'text-green-500' },
+        ];
+        const rows: SectionRow[] = [];
+        for (const section of sections) {
+            if (activeFilter !== 'Tous' && activeFilter !== section.value) continue;
+            const items = interventions.filter(i => i.statut === section.value);
+            if (items.length === 0) continue;
+            rows.push({ type: 'header', title: section.title, count: items.length, color: section.color });
+            for (const item of items) {
+                rows.push({ type: 'item', item });
+            }
+        }
+        return rows;
+    }, [interventions, activeFilter]);
 
     const filters = [
         { label: 'Tous', value: 'Tous' },
@@ -166,49 +192,39 @@ export default function InterventionsScreen() {
                     <ActivityIndicator size="large" color="#0f172a" />
                 </View>
             ) : (
-                <ScrollView
+                <FlatList
                     className="flex-1 px-6"
+                    data={sectionData}
+                    keyExtractor={(row, idx) => row.type === 'header' ? `header-${row.title}` : `item-${row.item.id}-${idx}`}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-                >
-                    {/* EN COURS */}
-                    {interventions.filter(i => i.statut === 'en_cours').length > 0 && (activeFilter === 'Tous' || activeFilter === 'en_cours') && (
-                        <View className="mb-6">
-                            <Text className="text-orange-500 font-bold mb-3 uppercase tracking-wider text-xs">En Cours ({interventions.filter(i => i.statut === 'en_cours').length})</Text>
-                            {interventions.filter(i => i.statut === 'en_cours').map((item) => (
-                                <View key={item.id}>{renderItem({ item })}</View>
-                            ))}
+                    onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+                    onEndReachedThreshold={0.3}
+                    renderItem={({ item: row }) => {
+                        if (row.type === 'header') {
+                            return (
+                                <View className="mb-3 mt-2">
+                                    <Text className={`${row.color} font-bold uppercase tracking-wider text-xs`}>
+                                        {row.title} ({row.count})
+                                    </Text>
+                                </View>
+                            );
+                        }
+                        return renderItem({ item: row.item });
+                    }}
+                    ListFooterComponent={isFetchingNextPage ? (
+                        <View className="py-4 items-center">
+                            <ActivityIndicator size="small" color="#0f172a" />
                         </View>
-                    )}
-
-                    {/* PLANIFIÉES */}
-                    {interventions.filter(i => i.statut === 'planifiee').length > 0 && (activeFilter === 'Tous' || activeFilter === 'planifiee') && (
-                        <View className="mb-6">
-                            <Text className="text-blue-500 font-bold mb-3 uppercase tracking-wider text-xs">Planifiées ({interventions.filter(i => i.statut === 'planifiee').length})</Text>
-                            {interventions.filter(i => i.statut === 'planifiee').map((item) => (
-                                <View key={item.id}>{renderItem({ item })}</View>
-                            ))}
-                        </View>
-                    )}
-
-                    {/* TERMINÉES */}
-                    {interventions.filter(i => i.statut === 'terminee').length > 0 && (activeFilter === 'Tous' || activeFilter === 'terminee') && (
-                        <View className="mb-6 opacity-60">
-                            <Text className="text-green-500 font-bold mb-3 uppercase tracking-wider text-xs">Terminées ({interventions.filter(i => i.statut === 'terminee').length})</Text>
-                            {interventions.filter(i => i.statut === 'terminee').map((item) => (
-                                <View key={item.id}>{renderItem({ item })}</View>
-                            ))}
-                        </View>
-                    )}
-
-                    {interventions.length === 0 && (
+                    ) : null}
+                    ListEmptyComponent={
                         <View className="items-center justify-center py-20">
                             <View className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center mb-4">
                                 <Wrench size={32} color="#cbd5e1" />
                             </View>
                             <Text className="text-slate-500 font-medium">Aucune intervention trouvée</Text>
                         </View>
-                    )}
-                </ScrollView>
+                    }
+                />
             )}
 
             <TouchableOpacity

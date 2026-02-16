@@ -1,8 +1,8 @@
-import { useDeleteProduct, useProducts } from '@/lib/hooks/useProducts';
+import { useDeleteProduct, useInfiniteProducts } from '@/lib/hooks/useProducts';
 import type { Product } from '@/lib/database.types';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Package, ScanLine, Trash2 } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,10 +22,10 @@ export default function StockScreen() {
     const [selectedCategory, setSelectedCategory] = useState<string>('Tous');
 
     const queryCategory = CATEGORY_MAP[selectedCategory] ?? 'all';
-    const { data, isLoading, refetch } = useProducts(queryCategory);
+    const { data, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteProducts(queryCategory);
     const deleteProduct = useDeleteProduct();
 
-    const products: Product[] = data?.data ?? [];
+    const products: Product[] = useMemo(() => data?.pages.flatMap(p => p.data) ?? [], [data?.pages]);
 
     // Refetch when screen comes into focus
     useFocusEffect(
@@ -111,6 +111,13 @@ export default function StockScreen() {
                         keyExtractor={item => item.id}
                         contentContainerStyle={{ padding: 16, paddingTop: 0 }}
                         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                        onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+                        onEndReachedThreshold={0.3}
+                        ListFooterComponent={isFetchingNextPage ? (
+                            <View className="py-4 items-center">
+                                <ActivityIndicator size="small" color="#16a34a" />
+                            </View>
+                        ) : null}
                         ListEmptyComponent={
                             <View className="items-center py-20 opacity-50">
                                 <Package size={48} color="#cbd5e1" />
