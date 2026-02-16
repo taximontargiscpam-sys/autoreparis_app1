@@ -22,17 +22,6 @@ export default function InterventionSummary({ intervention, refresh }: Intervent
     const { mutateAsync: updateStatus, isPending } = useUpdateInterventionStatus();
 
     const handleStatusChange = async (newStatus: InterventionStatus) => {
-        // Dummy Handling
-        if (intervention.id.toString().startsWith('dummy')) {
-            // Simulate network delay
-            setTimeout(() => {
-                // We call refresh, knowing it might reset to default dummy state
-                // Ideally we'd update the parent state, but this prevents the crash.
-                refresh();
-            }, 500);
-            return;
-        }
-
         try {
             await updateStatus({ id: intervention.id, statut: newStatus });
             refresh();

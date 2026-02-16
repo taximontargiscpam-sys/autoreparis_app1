@@ -111,31 +111,15 @@ export default function DashboardScreen() {
             />
           </View>
 
-          {/* Weekly Performance - Clean Design */}
+          {/* Quick Navigation */}
           <Animated.View entering={FadeInDown.delay(500).springify()} className="mb-4">
             <TouchableOpacity onPress={() => router.push('/(tabs)/planning')} activeOpacity={0.9}>
-              <View className="flex-row justify-between items-center mb-3 ml-1">
-                <Text className="text-lg font-bold text-slate-900 dark:text-white">Activité Semaine</Text>
-                <Text className="text-primary font-bold text-xs">Voir le planning ›</Text>
-              </View>
-              <View className="bg-white dark:bg-slate-900 rounded-[30px] p-5 shadow-sm border border-slate-100 dark:border-slate-800/50">
-                <View className="flex-row justify-between items-end h-28 mb-4">
-                  {[40, 65, 30, 85, 55, 90, 45].map((h, i) => (
-                    <View key={i} className="flex-1 items-center gap-2">
-                      <View className="w-8 bg-slate-50 dark:bg-slate-800/50 rounded-xl overflow-hidden relative h-full justify-end">
-                        <View
-                          className="w-full bg-slate-900 dark:bg-white rounded-xl"
-                          style={{ height: `${h}%`, opacity: 0.9 }}
-                        />
-                      </View>
-                    </View>
-                  ))}
+              <View className="bg-white dark:bg-slate-900 rounded-[30px] p-5 shadow-sm border border-slate-100 dark:border-slate-800/50 flex-row justify-between items-center">
+                <View>
+                  <Text className="text-lg font-bold text-slate-900 dark:text-white">Planning</Text>
+                  <Text className="text-slate-400 text-xs mt-1">Voir les rendez-vous de la semaine</Text>
                 </View>
-                <View className="flex-row justify-between px-1">
-                  {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
-                    <Text key={i} className="text-[10px] font-bold text-slate-300 dark:text-slate-600 w-8 text-center">{d}</Text>
-                  ))}
-                </View>
+                <Text className="text-primary font-bold text-sm">Ouvrir ›</Text>
               </View>
             </TouchableOpacity>
           </Animated.View>

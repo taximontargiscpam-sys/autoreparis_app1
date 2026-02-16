@@ -49,34 +49,13 @@ export default function RootLayout() {
 }
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { AuthProvider } from '../components/AuthContext';
+import { AuthProvider, useAuth } from '../components/AuthContext';
 import { useProtectedRoute } from '../components/useProtectedRoute';
 import { registerForPushNotificationsAsync, sendLocalNotification } from '../lib/notifications';
 import { supabaseWebsite } from '../lib/supabaseWebsite';
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-
-  useEffect(() => {
-    registerForPushNotificationsAsync().then(_token => {
-      // Token registered for push notifications
-    });
-
-    const subscription = supabaseWebsite
-      .channel('global_leads_notifications')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'devis_auto' }, (payload) => {
-        const lead = payload.new;
-        if (lead.statut === 'nouveau') {
-          sendLocalNotification(
-            "Nouvelle Demande ! 🔔",
-            `Projet: ${lead.vehicle_model || lead.projet || 'Contact'}\nClient: ${lead.prenom} ${lead.nom}`
-          );
-        }
-      })
-      .subscribe();
-
-    return () => { subscription.unsubscribe(); };
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -93,6 +72,28 @@ function RootLayoutNav() {
 
 function ProtectedLayout() {
   useProtectedRoute();
+  const { session } = useAuth();
+
+  useEffect(() => {
+    if (!session) return;
+
+    registerForPushNotificationsAsync();
+
+    const subscription = supabaseWebsite
+      .channel('global_leads_notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'devis_auto' }, (payload) => {
+        const lead = payload.new;
+        if (lead.statut === 'nouveau') {
+          sendLocalNotification(
+            "Nouvelle Demande",
+            `Projet: ${lead.vehicle_model || lead.projet || 'Contact'}`
+          );
+        }
+      })
+      .subscribe();
+
+    return () => { subscription.unsubscribe(); };
+  }, [session]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

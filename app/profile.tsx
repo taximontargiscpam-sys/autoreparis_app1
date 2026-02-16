@@ -7,7 +7,7 @@ import { getValidationError, passwordSchema, teamMemberSchema } from '@/lib/vali
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Building2, Lock, LogOut, Mail, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Modal, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 export default function GarageProfileScreen() {
@@ -239,14 +239,14 @@ export default function GarageProfileScreen() {
                         <Text className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-3 ml-2">Informations Légales</Text>
                         <View className="bg-white dark:bg-slate-900 rounded-[24px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
                             <TouchableOpacity
-                                onPress={() => Alert.alert("Politique de Confidentialité", "Consultable sur notre site web.")}
+                                onPress={() => Linking.openURL('https://autoreparis-legal.vercel.app/politique-de-confidentialite.html')}
                                 className="p-5 border-b border-slate-100 dark:border-slate-800 flex-row justify-between items-center bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800"
                             >
                                 <Text className="text-slate-900 dark:text-white font-bold text-base">Politique de Confidentialité</Text>
                                 <ArrowLeft size={16} className="text-slate-400 rotate-180" />
                             </TouchableOpacity>
                             <TouchableOpacity
-                                onPress={() => Alert.alert("CGU", "Consultables sur notre site web.")}
+                                onPress={() => Linking.openURL('https://autoreparis-legal.vercel.app/conditions-utilisation.html')}
                                 className="p-5 flex-row justify-between items-center bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800"
                             >
                                 <Text className="text-slate-900 dark:text-white font-bold text-base">Conditions Générales</Text>
@@ -267,7 +267,7 @@ export default function GarageProfileScreen() {
                         onPress={() => {
                             Alert.alert(
                                 "Supprimer mon compte",
-                                "Cette action est irréversible. Votre compte sera désactivé immédiatement et vous ne pourrez plus accéder à l'application.",
+                                "Cette action est irréversible. Toutes vos données seront supprimées définitivement et vous ne pourrez plus accéder à l'application.",
                                 [
                                     { text: "Annuler", style: "cancel" },
                                     {
@@ -275,7 +275,8 @@ export default function GarageProfileScreen() {
                                         style: "destructive",
                                         onPress: async () => {
                                             try {
-                                                const { error } = await supabase.from('users').update({ actif: false }).eq('id', currentUser?.id);
+                                                if (!currentUser?.id) throw new Error("Utilisateur non trouvé");
+                                                const { error } = await supabase.from('users').delete().eq('id', currentUser.id);
                                                 if (error) throw error;
                                                 await supabase.auth.signOut();
                                                 router.replace('/(auth)/login');

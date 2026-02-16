@@ -130,7 +130,12 @@ export default function InterventionsScreen() {
             <View className="p-6 pb-2">
                 <View className="flex-row justify-between items-center mb-6">
                     <Text className="text-3xl font-black text-slate-900 dark:text-white">Atelier</Text>
-                    <TouchableOpacity accessibilityLabel="Filtrer les interventions" accessibilityRole="button" className="w-10 h-10 bg-white dark:bg-slate-800 rounded-full items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <TouchableOpacity
+                        onPress={() => setActiveFilter(activeFilter === 'Tous' ? 'en_cours' : 'Tous')}
+                        accessibilityLabel="Filtrer les interventions"
+                        accessibilityRole="button"
+                        className="w-10 h-10 bg-white dark:bg-slate-800 rounded-full items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm"
+                    >
                         <Filter size={20} color="#64748b" />
                     </TouchableOpacity>
                 </View>

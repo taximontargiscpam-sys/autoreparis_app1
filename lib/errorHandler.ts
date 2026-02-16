@@ -6,8 +6,8 @@ const MAX_ERROR_LOG = 50;
 export const handleError = (error: any, userMessage?: string) => {
     const technicalMessage = error?.message || error?.toString() || 'Unknown error';
     const displayMessage = userMessage
-        ? `${userMessage}\n\n(Détails: ${technicalMessage})`
-        : `Une erreur est survenue : ${technicalMessage}`;
+        ? userMessage
+        : 'Une erreur est survenue. Veuillez réessayer.';
 
     logErrorSilent(error, userMessage || 'user-facing');
 

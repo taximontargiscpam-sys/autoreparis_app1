@@ -32,7 +32,15 @@ export default function LeadDetailScreen() {
 
     const isConverted = lead?.statut === 'converti' || lead?.statut === 'gagne';
 
-    if (!lead) return null;
+    if (!lead) return (
+        <View className="flex-1 justify-center items-center bg-slate-50 dark:bg-slate-950 p-6">
+            <Text className="text-slate-900 dark:text-white text-lg font-bold mb-2">Demande introuvable</Text>
+            <Text className="text-slate-500 text-center mb-6">Impossible de charger cette demande.</Text>
+            <TouchableOpacity onPress={() => router.back()} className="bg-blue-600 px-6 py-3 rounded-full">
+                <Text className="text-white font-bold">Retour</Text>
+            </TouchableOpacity>
+        </View>
+    );
 
     // Helper to render a field if it exists
     const Field = ({ icon: Icon, label, value, isLink = false, action }: any) => {

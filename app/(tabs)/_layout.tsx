@@ -29,10 +29,7 @@ export default function TabLayout() {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          display: 'none', // Remove naming for cleaner look as requested? Or just keep small. User said "barre noir ou le nom des sections est affiché". Only removing labels might leave icons. Let's try removing labels or making them subtle.
-          // User said "la barre noir en haut et en bas ou le nom des sections est affiché", implies they want to remove the 'bar' visual or headers.
-          // Setting background to match app background fixes the "bar" look.
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: '600',
         }
       }}>

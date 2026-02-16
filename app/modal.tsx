@@ -1,10 +1,18 @@
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Platform, Text, View } from 'react-native';
+import { Platform, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ModalScreen() {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0f172a' }}>
+      <View style={{ padding: 16, alignItems: 'flex-end' }}>
+        <TouchableOpacity onPress={() => router.back()} style={{ padding: 8 }}>
+          <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 16 }}>Fermer</Text>
+        </TouchableOpacity>
+      </View>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#ffffff' }}>
           AutoReparis OS

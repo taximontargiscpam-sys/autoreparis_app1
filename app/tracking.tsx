@@ -315,11 +315,11 @@ export default function TrackingScreen() {
                                 {photos.map((photo: any) => (
                                     <TouchableOpacity
                                         key={photo.id}
-                                        onPress={() => setSelectedPhoto(photo.photo_url)}
+                                        onPress={() => setSelectedPhoto(photo.url_image || photo.photo_url)}
                                         className="w-40 h-56 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 relative"
                                     >
                                         <Image
-                                            source={{ uri: photo.photo_url }}
+                                            source={{ uri: photo.url_image || photo.photo_url }}
                                             style={{ width: '100%', height: '100%' }}
                                             resizeMode="cover"
                                         />
