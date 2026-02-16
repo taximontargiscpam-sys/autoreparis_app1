@@ -172,7 +172,7 @@ export default function TrackingScreen() {
                     <View className="h-1.5 bg-slate-800 rounded-full mb-8 overflow-hidden">
                         <View
                             className={`h-full rounded-full ${intervention.statut === 'terminee' ? 'bg-green-500' : 'bg-orange-500'}`}
-                            style={{ width: intervention.statut === 'terminee' ? '100%' : '60%' }}
+                            style={{ width: intervention.statut === 'terminee' ? '100%' : intervention.statut === 'en_cours' ? '60%' : '15%' }}
                         />
                     </View>
 

@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Camera, FileText, User, Wrench, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function InterventionDetailScreen() {
@@ -46,7 +46,7 @@ export default function InterventionDetailScreen() {
             // Also refetch the single intervention to update the detail view
             qc.invalidateQueries({ queryKey: ['intervention', id] });
         } catch {
-            alert('Erreur lors de l\'affectation');
+            Alert.alert('Erreur', "Erreur lors de l'affectation");
         }
     };
 

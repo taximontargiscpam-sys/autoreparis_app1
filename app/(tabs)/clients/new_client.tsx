@@ -64,7 +64,7 @@ export default function NewClientScreen() {
                         client_id: client.id,
                     } as any);
                 } catch (vehErr: any) {
-                    console.error("Vehicle Error:", vehErr);
+                    if (__DEV__) console.error("Vehicle Error:", vehErr);
                     Alert.alert('Attention', "Client cree mais impossible d'associer le vehicule.");
                 }
             }
@@ -73,7 +73,7 @@ export default function NewClientScreen() {
             Alert.alert('Succes', 'Client ajoute avec succes !');
             router.back();
         } catch (err: any) {
-            console.error(err);
+            if (__DEV__) console.error(err);
             setLoading(false);
             Alert.alert('Erreur', "Impossible de creer le client. " + (err.message || ''));
         }

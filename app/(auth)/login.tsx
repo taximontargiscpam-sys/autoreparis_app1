@@ -10,6 +10,14 @@ export default function LoginScreen() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
+    function translateAuthError(msg: string): string {
+        if (msg.includes('Invalid login credentials')) return 'Email ou mot de passe incorrect.';
+        if (msg.includes('Email not confirmed')) return "Votre email n'a pas encore été confirmé.";
+        if (msg.includes('Too many requests')) return 'Trop de tentatives. Réessayez dans quelques minutes.';
+        if (msg.includes('User not found')) return 'Aucun compte trouvé avec cet email.';
+        return 'Erreur de connexion. Veuillez réessayer.';
+    }
+
     async function signInWithEmail() {
         setLoading(true);
         const { error } = await supabase.auth.signInWithPassword({
@@ -18,18 +26,26 @@ export default function LoginScreen() {
         });
 
         if (error) {
-            Alert.alert('Erreur', error.message);
+            Alert.alert('Erreur', translateAuthError(error.message));
             setLoading(false);
         } else {
-            // Router redirection is handled by the AuthContext or root layout protection usually,
-            // but we can also manually push if needed.
-            // For now, let's rely on the layout or manual push.
             router.replace('/(tabs)');
         }
         setLoading(false);
     }
 
-    // Removed unused signUpWithEmail function
+    async function handleForgotPassword() {
+        if (!email.trim()) {
+            Alert.alert('Email requis', 'Veuillez entrer votre email pour réinitialiser votre mot de passe.');
+            return;
+        }
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+        if (error) {
+            Alert.alert('Erreur', translateAuthError(error.message));
+        } else {
+            Alert.alert('Email envoyé', 'Un lien de réinitialisation a été envoyé à ' + email.trim());
+        }
+    }
 
     return (
         <View className="flex-1 bg-gray-50 dark:bg-slate-900 justify-center items-center p-6">
@@ -91,7 +107,13 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* PUBLIC TRACKING LINK - APP STORE REQUIREMENT */}
+                <TouchableOpacity
+                    className="mt-4 items-center"
+                    onPress={handleForgotPassword}
+                >
+                    <Text className="text-blue-500 text-sm">Mot de passe oublié ?</Text>
+                </TouchableOpacity>
+
                 {/* Back to Home Link */}
                 <TouchableOpacity
                     className="mt-8 flex-row items-center justify-center space-x-2"

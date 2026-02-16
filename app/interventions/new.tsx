@@ -57,6 +57,12 @@ export default function NewInterventionScreen() {
     const times = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
 
     const pickImage = async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission requise', "L'accès à la caméra est nécessaire pour prendre des photos.");
+            return;
+        }
+
         const result = await ImagePicker.launchCameraAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             quality: 0.5,
@@ -156,7 +162,7 @@ export default function NewInterventionScreen() {
                     .delete()
                     .eq('id', params.lead_id);
 
-                if (deleteLeadError) console.error("Error deleting lead:", deleteLeadError);
+                if (deleteLeadError && __DEV__) console.error("Error deleting lead:", deleteLeadError);
             }
 
             // Invalidate React Query caches so lists & dashboard update
@@ -167,7 +173,7 @@ export default function NewInterventionScreen() {
             router.back();
 
         } catch (error: any) {
-            console.error(error);
+            if (__DEV__) console.error(error);
             Alert.alert('Erreur', error.message || 'Une erreur est survenue');
         } finally {
             setLoading(false);
