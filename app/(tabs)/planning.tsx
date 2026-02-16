@@ -152,12 +152,7 @@ export default function PlanningScreen() {
             Alert.alert("Succ\u00e8s", "Disponibilit\u00e9s mises \u00e0 jour !");
             setShowUserModal(false);
         } catch (err: any) {
-            let msg = err.message || 'Erreur inconnue';
-            // Handle common Supabase errors
-            if (err.code === '23503') msg = "Cet employ\u00e9 n'existe pas valides en base (FK Violation).";
-            if (err.code === '42501') msg = "Permission bloqu\u00e9e (RLS). Lancez le script SQL.";
-
-            Alert.alert("Erreur", "Sauvegarde impossible: " + msg);
+            Alert.alert("Erreur", "Sauvegarde impossible. Veuillez réessayer ou contacter l'administrateur.");
         }
     };
 

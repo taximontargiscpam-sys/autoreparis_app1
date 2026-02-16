@@ -24,7 +24,7 @@ export function useInfiniteInterventions() {
 export function useIntervention(id: string | undefined) {
   return useQuery({
     queryKey: ['intervention', id],
-    enabled: !!id && !id.startsWith('dummy'),
+    enabled: !!id,
     queryFn: () => interventionService.getById(id!),
   });
 }

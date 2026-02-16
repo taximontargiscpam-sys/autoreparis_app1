@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import { Car, Search } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVehicleSearch } from '@/lib/hooks/useVehicleSearch';
 
 export default function ClientLoginScreen() {

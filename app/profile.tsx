@@ -7,7 +7,8 @@ import { getValidationError, passwordSchema, teamMemberSchema } from '@/lib/vali
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Building2, Lock, LogOut, Mail, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 export default function GarageProfileScreen() {
@@ -40,7 +41,7 @@ export default function GarageProfileScreen() {
         const { error } = await supabase.auth.updateUser({ password: passwordForm.new });
 
         if (error) {
-            Alert.alert("Erreur", error.message);
+            Alert.alert("Erreur", "Impossible de mettre à jour le mot de passe. Veuillez réessayer.");
         } else {
             Alert.alert("Succès", "Mot de passe mis à jour !");
             setShowPasswordModal(false);
@@ -87,8 +88,8 @@ export default function GarageProfileScreen() {
                             onSuccess: () => {
                                 Alert.alert("Succès", "Membre supprimé.");
                             },
-                            onError: (error) => {
-                                Alert.alert("Erreur", error.message);
+                            onError: () => {
+                                Alert.alert("Erreur", "Impossible de supprimer ce membre. Veuillez réessayer.");
                             },
                         });
                     }
@@ -276,12 +277,12 @@ export default function GarageProfileScreen() {
                                         onPress: async () => {
                                             try {
                                                 if (!currentUser?.id) throw new Error("Utilisateur non trouvé");
-                                                const { error } = await supabase.from('users').delete().eq('id', currentUser.id);
+                                                const { error } = await supabase.rpc('delete_own_account');
                                                 if (error) throw error;
                                                 await supabase.auth.signOut();
                                                 router.replace('/(auth)/login');
                                             } catch (e: any) {
-                                                Alert.alert("Erreur", e.message);
+                                                Alert.alert("Erreur", "Impossible de supprimer le compte. Veuillez réessayer ou contacter le support.");
                                             }
                                         }
                                     }
