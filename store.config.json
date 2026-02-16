@@ -9,7 +9,7 @@
         "keywords": ["garage", "réparation", "mécanique", "atelier", "gestion", "automobile", "planning", "stock", "devis", "voiture", "carrosserie"],
         "promoText": "Gérez votre atelier automobile comme un pro. Interventions, planning, stocks et suivi client — tout dans une seule app.",
         "releaseNotes": "Première version de l'application AutoReparis OS.\n- Tableau de bord avec KPI en temps réel\n- Gestion complète des interventions\n- Planning d'équipe connecté\n- Scanner de codes-barres pour le stock\n- Suivi client par plaque d'immatriculation\n- Notifications push pour les demandes web",
-        "privacyPolicyUrl": "https://autoreparis-legal.vercel.app/politique-de-confidentialite.html"
+        "privacyPolicyUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html"
       }
     },
     "categories": ["BUSINESS", "PRODUCTIVITY"],

@@ -239,14 +239,14 @@ export default function GarageProfileScreen() {
                         <Text className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-3 ml-2">Informations Légales</Text>
                         <View className="bg-white dark:bg-slate-900 rounded-[24px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
                             <TouchableOpacity
-                                onPress={() => Linking.openURL('https://autoreparis-legal.vercel.app/politique-de-confidentialite.html')}
+                                onPress={() => Linking.openURL('https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html')}
                                 className="p-5 border-b border-slate-100 dark:border-slate-800 flex-row justify-between items-center bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800"
                             >
                                 <Text className="text-slate-900 dark:text-white font-bold text-base">Politique de Confidentialité</Text>
                                 <ArrowLeft size={16} className="text-slate-400 rotate-180" />
                             </TouchableOpacity>
                             <TouchableOpacity
-                                onPress={() => Linking.openURL('https://autoreparis-legal.vercel.app/conditions-utilisation.html')}
+                                onPress={() => Linking.openURL('https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html')}
                                 className="p-5 flex-row justify-between items-center bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800"
                             >
                                 <Text className="text-slate-900 dark:text-white font-bold text-base">Conditions Générales</Text>
