@@ -116,9 +116,10 @@ CREATE POLICY "products_update" ON public.products
 CREATE POLICY "products_delete" ON public.products
   FOR DELETE USING (public.is_admin());
 
--- NOTE: Any existing 'Public Access' policy on products must be dropped.
--- Run this in your Supabase SQL Editor to remove it:
--- DROP POLICY IF EXISTS "Public Access" ON public.products;
+-- SECURITY FIX: Explicitly drop any legacy 'Public Access' policy on products
+-- that may have been created during development. This ensures only authenticated
+-- users with proper roles can access product data.
+DROP POLICY IF EXISTS "Public Access" ON public.products;
 
 -- =====================================================
 -- INTERVENTIONS: all read, write roles modify, admin delete

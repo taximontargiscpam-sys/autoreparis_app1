@@ -21,12 +21,12 @@ describe('errorHandler', () => {
     );
   });
 
-  it('shows alert with technical message when no user message', () => {
+  it('shows alert with default message when no user message', () => {
     handleError(new Error('technical failure'));
     jest.advanceTimersByTime(200);
     expect(Alert.alert).toHaveBeenCalledWith(
       'Erreur',
-      expect.stringContaining('technical failure')
+      'Une erreur est survenue. Veuillez réessayer.'
     );
   });
 });

@@ -1,3 +1,4 @@
+import { StatusBadge } from '@/components/StatusBadge';
 import { useDeleteIntervention, useInterventions } from '@/lib/hooks/useInterventions';
 import type { InterventionWithRelations } from '@/lib/database.types';
 import { format } from 'date-fns';
@@ -73,18 +74,7 @@ export default function InterventionsScreen() {
         );
     };
 
-    const getStatusStyle = (status: string) => {
-        switch (status) {
-            case 'planifiee': return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'Planifiée' };
-            case 'en_cours': return { bg: 'bg-orange-500/10', text: 'text-orange-500', label: 'En cours' };
-            case 'terminee': return { bg: 'bg-green-500/10', text: 'text-green-500', label: 'Terminée' };
-            case 'facturee': return { bg: 'bg-purple-500/10', text: 'text-purple-500', label: 'Facturée' };
-            default: return { bg: 'bg-slate-500/10', text: 'text-slate-500', label: status };
-        }
-    };
-
     const renderItem = ({ item }: { item: InterventionWithRelations }) => {
-        const statusStyle = getStatusStyle(item.statut);
         const clientName = item.clients ? `${item.clients.nom} ${item.clients.prenom || ''}` : 'Client Inconnu';
         const vehicleName = item.vehicles ? `${item.vehicles.marque} ${item.vehicles.modele}` : 'Véhicule Inconnu';
 
@@ -103,9 +93,7 @@ export default function InterventionsScreen() {
                                 <Text className="text-slate-500 text-sm">{clientName}</Text>
                             </View>
                         </View>
-                        <View className={`px-3 py-1 rounded-full ${statusStyle.bg}`}>
-                            <Text className={`text-xs font-bold ${statusStyle.text}`}>{statusStyle.label}</Text>
-                        </View>
+                        <StatusBadge status={item.statut} />
                     </View>
 
                     <View className="flex-row items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
