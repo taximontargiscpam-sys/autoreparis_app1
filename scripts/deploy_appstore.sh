@@ -64,6 +64,10 @@ echo -e "${YELLOW}Trouve-la dans : Supabase Dashboard > Settings > API > service
 echo ""
 ask "Colle ta service_role key ici (ou tape SKIP pour sauter) : "
 read -r SERVICE_ROLE_KEY
+# Normalize skip (case-insensitive)
+if echo "$SERVICE_ROLE_KEY" | grep -qi "^skip$"; then
+    SERVICE_ROLE_KEY="SKIP"
+fi
 echo ""
 
 # ============================================================
@@ -139,7 +143,7 @@ if [ "$SERVICE_ROLE_KEY" != "SKIP" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
         }' 2>/dev/null)
 
     HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -1)
-    BODY=$(echo "$CREATE_RESPONSE" | head -n -1)
+    BODY=$(echo "$CREATE_RESPONSE" | sed '$d')
 
     if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
         # Extract user ID
