@@ -7,10 +7,10 @@
 #   2. Deploy SQL Supabase (delete_own_account)
 #   3. Cree le compte review Apple dans Supabase Auth
 #   4. Active GitHub Pages
-#   5. Configure les variables EAS
-#   6. Build iOS production
-#   7. Push metadata App Store
-#   8. Submit a l'App Store
+#   5. Copie le fichier .p8
+#   6. Login EAS + variables d'env
+#   7. Build iOS production
+#   8. Push metadata + Submit App Store
 #
 # Usage :
 #   cd autoreparis_app1
@@ -71,7 +71,9 @@ echo ""
 # ============================================================
 step "1" "Pull du code et merge dans main"
 
-git fetch origin claude/project-analysis-ZPLpc 2>/dev/null || true
+FEATURE_BRANCH="claude/project-analysis-ZPLpc"
+
+git fetch origin "$FEATURE_BRANCH" 2>/dev/null || true
 git fetch origin main 2>/dev/null || true
 
 CURRENT_BRANCH=$(git branch --show-current)
@@ -79,8 +81,13 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
     git checkout main 2>/dev/null || git checkout -b main origin/main 2>/dev/null || git checkout -b main
 fi
 
-git merge origin/claude/project-analysis-ZPLpc --no-edit 2>/dev/null || ok "Deja a jour"
-git push origin main 2>/dev/null || warn "Push main echoue — fais-le manuellement"
+if ! git merge "origin/$FEATURE_BRANCH" --no-edit 2>/dev/null; then
+    warn "Conflit de merge detecte. Resolution..."
+    git merge --abort 2>/dev/null || true
+    fail "Merge echoue avec des conflits. Resous-les manuellement : git merge origin/$FEATURE_BRANCH"
+fi
+
+git push origin main 2>/dev/null || warn "Push main echoue — fais-le manuellement : git push origin main"
 
 ok "Code sur main"
 
@@ -90,43 +97,25 @@ ok "Code sur main"
 step "2" "Deploiement SQL Supabase (delete_own_account)"
 
 SUPABASE_URL="https://wjvqdvjtzwmusabbinnl.supabase.co"
+SUPABASE_PROJECT_REF="wjvqdvjtzwmusabbinnl"
 
 if [ "$SERVICE_ROLE_KEY" != "SKIP" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
-    # Deploy via Supabase REST API (pg/query endpoint)
-    SQL_BODY=$(cat <<'EOSQL'
-CREATE OR REPLACE FUNCTION public.delete_own_account()
-RETURNS void AS $$
-BEGIN
-  DELETE FROM public.users WHERE id = auth.uid();
-  DELETE FROM auth.users WHERE id = auth.uid();
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-GRANT EXECUTE ON FUNCTION public.delete_own_account() TO authenticated;
-EOSQL
-)
+    # Read the SQL file
+    SQL_CONTENT=$(cat scripts/delete_account.sql)
 
-    # Try the SQL query via REST
-    HTTP_CODE=$(curl -s -o /tmp/supabase_sql_response.json -w "%{http_code}" \
-        "$SUPABASE_URL/rest/v1/rpc/" \
-        -X POST \
-        -H "apikey: $SERVICE_ROLE_KEY" \
-        -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
-        -H "Content-Type: application/json" \
-        2>/dev/null || echo "000")
-
-    if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "204" ]; then
-        ok "Fonction delete_own_account() deployee"
+    # Try deploying via setup_supabase.js (handles both SQL + review account)
+    if node scripts/setup_supabase.js "$SERVICE_ROLE_KEY" 2>/dev/null; then
+        ok "Setup Supabase termine via script Node"
     else
-        warn "Deploiement auto echoue (code $HTTP_CODE). Methode alternative..."
-        # Try via setup_supabase.js
-        node scripts/setup_supabase.js "$SERVICE_ROLE_KEY" 2>/dev/null || true
         echo ""
-        echo -e "${YELLOW}  Si la fonction n'est pas deployee, copie-colle manuellement :${NC}"
-        echo -e "${YELLOW}  scripts/delete_account.sql → Supabase SQL Editor${NC}"
-        echo -e "${YELLOW}  https://supabase.com/dashboard/project/wjvqdvjtzwmusabbinnl/sql/new${NC}"
+        echo -e "${YELLOW}  Le script automatique a echoue. Deploie manuellement :${NC}"
+        echo -e "${YELLOW}  1. Ouvre : https://supabase.com/dashboard/project/$SUPABASE_PROJECT_REF/sql/new${NC}"
+        echo -e "${YELLOW}  2. Copie-colle le contenu de scripts/delete_account.sql${NC}"
+        echo -e "${YELLOW}  3. Clique Run${NC}"
     fi
 else
     warn "SKIP — Tu dois deployer scripts/delete_account.sql manuellement dans Supabase SQL Editor"
+    echo -e "  URL: ${BOLD}https://supabase.com/dashboard/project/$SUPABASE_PROJECT_REF/sql/new${NC}"
 fi
 
 # ============================================================
@@ -180,12 +169,37 @@ if [ "$SERVICE_ROLE_KEY" != "SKIP" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
         fi
     elif echo "$BODY" | grep -qi "already"; then
         ok "Compte review existe deja"
-        # Update password
-        curl -s -o /dev/null \
+
+        # Get the user ID to update the password
+        LIST_RESPONSE=$(curl -s \
             "$SUPABASE_URL/auth/v1/admin/users" \
             -X GET \
             -H "apikey: $SERVICE_ROLE_KEY" \
-            -H "Authorization: Bearer $SERVICE_ROLE_KEY" 2>/dev/null || true
+            -H "Authorization: Bearer $SERVICE_ROLE_KEY" 2>/dev/null)
+
+        EXISTING_USER_ID=$(echo "$LIST_RESPONSE" | node -e "
+            let data='';
+            process.stdin.on('data',d=>data+=d);
+            process.stdin.on('end',()=>{
+                try{
+                    const parsed=JSON.parse(data);
+                    const users=parsed.users||[];
+                    const u=users.find(u=>u.email==='review@autoreparis.com');
+                    console.log(u?u.id:'');
+                }catch(e){console.log('')}
+            });" 2>/dev/null)
+
+        if [ -n "$EXISTING_USER_ID" ]; then
+            # Update password via PATCH
+            curl -s -o /dev/null \
+                "$SUPABASE_URL/auth/v1/admin/users/$EXISTING_USER_ID" \
+                -X PUT \
+                -H "apikey: $SERVICE_ROLE_KEY" \
+                -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+                -H "Content-Type: application/json" \
+                -d '{"password": "AppleReview2026!"}' 2>/dev/null || true
+            ok "Mot de passe du compte review mis a jour"
+        fi
     else
         warn "Creation du compte review echouee (code $HTTP_CODE). Cree-le manuellement dans Supabase Auth."
         echo -e "${YELLOW}  Email: review@autoreparis.com | Password: AppleReview2026!${NC}"
@@ -202,15 +216,36 @@ fi
 # ============================================================
 step "4" "Activation GitHub Pages"
 
-if command -v gh &>/dev/null; then
-    gh api repos/taximontargiscpam-sys/autoreparis_app1/pages \
+REPO_OWNER="taximontargiscpam-sys"
+REPO_NAME="autoreparis_app1"
+
+# Try via GitHub API with token if available
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+    curl -s -o /dev/null -w "%{http_code}" \
+        "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pages" \
+        -X POST \
+        -H "Authorization: token $GITHUB_TOKEN" \
+        -H "Accept: application/vnd.github+json" \
+        -d '{"source":{"branch":"main","path":"/docs"}}' 2>/dev/null \
+    && ok "GitHub Pages active" \
+    || {
+        curl -s -o /dev/null \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pages" \
+            -X PUT \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -d '{"source":{"branch":"main","path":"/docs"}}' 2>/dev/null \
+        && ok "GitHub Pages mis a jour" \
+        || warn "Active GitHub Pages manuellement : Repo Settings > Pages > main > /docs"
+    }
+elif command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
+    gh api "repos/$REPO_OWNER/$REPO_NAME/pages" \
         -X POST \
         -f "source[branch]=main" \
         -f "source[path]=/docs" 2>/dev/null \
     && ok "GitHub Pages active" \
     || {
-        # Maybe already enabled, try to update
-        gh api repos/taximontargiscpam-sys/autoreparis_app1/pages \
+        gh api "repos/$REPO_OWNER/$REPO_NAME/pages" \
             -X PUT \
             -f "source[branch]=main" \
             -f "source[path]=/docs" 2>/dev/null \
@@ -218,15 +253,18 @@ if command -v gh &>/dev/null; then
         || warn "Active GitHub Pages manuellement : Repo Settings > Pages > main > /docs"
     }
 else
-    warn "gh CLI non installe. Active GitHub Pages manuellement :"
-    echo "    Repo Settings > Pages > Source: main, /docs"
+    warn "Pas de token GitHub disponible. Active GitHub Pages manuellement :"
+    echo "    1. Va sur https://github.com/$REPO_OWNER/$REPO_NAME/settings/pages"
+    echo "    2. Source: Deploy from a branch"
+    echo "    3. Branch: main, Folder: /docs"
+    echo "    4. Save"
 fi
 
 # Verify URLs
 echo "  Verification des URLs legales..."
 for url in \
-    "https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html" \
-    "https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html"; do
+    "https://$REPO_OWNER.github.io/$REPO_NAME/politique-de-confidentialite.html" \
+    "https://$REPO_OWNER.github.io/$REPO_NAME/conditions-utilisation.html"; do
     CODE=$(curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || echo "000")
     if [ "$CODE" = "200" ]; then
         ok "$url → 200 OK"
@@ -242,6 +280,7 @@ step "5" "Verification du fichier .p8 (App Store Connect API Key)"
 
 if [ ! -f "./AuthKey_C2G27ANQC7.p8" ]; then
     # Check common locations
+    P8_FOUND=false
     for loc in \
         "$HOME/Downloads/AuthKey_C2G27ANQC7.p8" \
         "$HOME/Desktop/AuthKey_C2G27ANQC7.p8" \
@@ -250,12 +289,13 @@ if [ ! -f "./AuthKey_C2G27ANQC7.p8" ]; then
         if [ -f "$loc" ]; then
             cp "$loc" ./AuthKey_C2G27ANQC7.p8
             ok "Fichier .p8 copie depuis $loc"
+            P8_FOUND=true
             break
         fi
     done
 
-    if [ ! -f "./AuthKey_C2G27ANQC7.p8" ]; then
-        fail "AuthKey_C2G27ANQC7.p8 introuvable ! Place-le a la racine du projet."
+    if [ "$P8_FOUND" = false ]; then
+        fail "AuthKey_C2G27ANQC7.p8 introuvable ! Place-le a la racine du projet ou dans ~/Downloads/"
     fi
 else
     ok "Fichier .p8 present"
@@ -268,7 +308,9 @@ step "6" "Login EAS et configuration"
 
 CURRENT_USER=$(npx expo whoami 2>/dev/null || echo "")
 if [ -z "$CURRENT_USER" ] || echo "$CURRENT_USER" | grep -qi "not logged"; then
-    npx expo login -u "amirpro@hotmail.fr" -p "BilelYounes1977@"
+    echo -e "  ${YELLOW}Tu dois te connecter a ton compte Expo/EAS.${NC}"
+    echo ""
+    npx expo login
     ok "Connecte a Expo"
 else
     ok "Deja connecte : $CURRENT_USER"
@@ -291,9 +333,20 @@ echo -e "  ${BOLD}Lancement du build iOS sur EAS...${NC}"
 echo "  Cela prend environ 15-25 minutes."
 echo ""
 
-eas build --platform ios --profile production --non-interactive
+# Capture build ID for reliable submit
+BUILD_OUTPUT=$(eas build --platform ios --profile production --non-interactive --json 2>/dev/null || echo "")
 
-ok "Build iOS termine !"
+if [ -n "$BUILD_OUTPUT" ]; then
+    BUILD_ID=$(echo "$BUILD_OUTPUT" | node -e "
+        let d='';process.stdin.on('data',c=>d+=c);
+        process.stdin.on('end',()=>{try{const p=JSON.parse(d);console.log(Array.isArray(p)?p[0].id:p.id)}catch(e){console.log('')}});" 2>/dev/null)
+    ok "Build iOS termine ! (ID: ${BUILD_ID:-unknown})"
+else
+    # Fallback to non-json build
+    eas build --platform ios --profile production --non-interactive
+    BUILD_ID=""
+    ok "Build iOS termine !"
+fi
 
 # ============================================================
 # ETAPE 8 : Metadata + Submit
@@ -301,11 +354,18 @@ ok "Build iOS termine !"
 step "8" "Soumission a l'App Store"
 
 echo "  Push des metadonnees..."
-eas metadata:push 2>/dev/null || warn "metadata:push a echoue — remplis manuellement dans App Store Connect"
+if ! eas metadata:push 2>/dev/null; then
+    warn "metadata:push a echoue — remplis manuellement dans App Store Connect"
+    echo "  Les infos sont dans store.config.json"
+fi
 
 echo ""
-echo "  Soumission du dernier build..."
-eas submit --platform ios --latest --non-interactive
+echo "  Soumission du build..."
+if [ -n "${BUILD_ID:-}" ]; then
+    eas submit --platform ios --id "$BUILD_ID" --non-interactive
+else
+    eas submit --platform ios --latest --non-interactive
+fi
 
 ok "Build soumis a App Store Connect !"
 

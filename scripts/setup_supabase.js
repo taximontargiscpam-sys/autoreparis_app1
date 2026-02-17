@@ -13,6 +13,8 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const path = require('path');
 
 const SUPABASE_URL = 'https://wjvqdvjtzwmusabbinnl.supabase.co';
 const SERVICE_ROLE_KEY = process.argv[2];
@@ -33,36 +35,19 @@ async function main() {
     // 1. Deploy delete_own_account() function
     console.log('1. Deploiement de la fonction delete_own_account()...');
 
+    // Read the SQL file
+    const sqlPath = path.join(__dirname, 'delete_account.sql');
+    const sqlContent = fs.readFileSync(sqlPath, 'utf-8');
+
     const { error: sqlError } = await supabase.rpc('exec_sql', {
-        sql: `
-            CREATE OR REPLACE FUNCTION public.delete_own_account()
-            RETURNS void AS $$
-            BEGIN
-              DELETE FROM public.users WHERE id = auth.uid();
-              DELETE FROM auth.users WHERE id = auth.uid();
-            END;
-            $$ LANGUAGE plpgsql SECURITY DEFINER;
-            GRANT EXECUTE ON FUNCTION public.delete_own_account() TO authenticated;
-        `
+        sql: sqlContent
     });
 
-    // If exec_sql RPC doesn't exist, try direct SQL via REST
     if (sqlError) {
-        console.log('   RPC exec_sql non disponible, essai via pg_query...');
-
-        // Use the Management API to run SQL
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SERVICE_ROLE_KEY,
-                'Authorization': `Bearer ${SERVICE_ROLE_KEY}`
-            }
-        });
-
         console.log('\x1b[33m   [ATTENTION] La fonction SQL doit etre deployee manuellement.\x1b[0m');
-        console.log('   Copie-colle le contenu de scripts/delete_account.sql dans le SQL Editor Supabase.');
-        console.log('   URL: https://supabase.com/dashboard/project/wjvqdvjtzwmusabbinnl/sql/new');
+        console.log('   L\'API exec_sql n\'est pas disponible sur ce projet Supabase.');
+        console.log('   Copie-colle le contenu de scripts/delete_account.sql dans le SQL Editor Supabase :');
+        console.log('   https://supabase.com/dashboard/project/wjvqdvjtzwmusabbinnl/sql/new');
     } else {
         console.log('\x1b[32m   [OK] Fonction delete_own_account() deployee\x1b[0m');
     }
@@ -84,19 +69,29 @@ async function main() {
         if (authError.message.includes('already been registered') || authError.message.includes('already exists')) {
             console.log('\x1b[33m   [INFO] Le compte review@autoreparis.com existe deja\x1b[0m');
 
-            // Get existing user
-            const { data: { users } } = await supabase.auth.admin.listUsers();
-            const existingUser = users.find(u => u.email === REVIEW_EMAIL);
+            // Get existing user with error checking
+            const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
 
-            if (existingUser) {
-                // Update password to be sure
-                await supabase.auth.admin.updateUserById(existingUser.id, {
-                    password: REVIEW_PASSWORD
-                });
-                console.log('\x1b[32m   [OK] Mot de passe du compte review mis a jour\x1b[0m');
+            if (listError) {
+                console.error('\x1b[31m   [ERREUR] Impossible de lister les users: ' + listError.message + '\x1b[0m');
+            } else {
+                const existingUser = listData.users.find(u => u.email === REVIEW_EMAIL);
 
-                // Ensure user row exists
-                await ensureUserRow(existingUser.id, REVIEW_EMAIL);
+                if (existingUser) {
+                    // Update password to be sure
+                    const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+                        password: REVIEW_PASSWORD
+                    });
+
+                    if (updateError) {
+                        console.error('\x1b[31m   [ERREUR] Update password: ' + updateError.message + '\x1b[0m');
+                    } else {
+                        console.log('\x1b[32m   [OK] Mot de passe du compte review mis a jour\x1b[0m');
+                    }
+
+                    // Ensure user row exists
+                    await ensureUserRow(existingUser.id, REVIEW_EMAIL);
+                }
             }
         } else {
             console.error('\x1b[31m   [ERREUR] ' + authError.message + '\x1b[0m');
@@ -141,11 +136,16 @@ async function ensureUserRow(userId, email) {
         }
     } else {
         // Update role to admin
-        await supabase
+        const { error: updateError } = await supabase
             .from('users')
             .update({ role: 'admin', actif: true })
             .eq('id', userId);
-        console.log('\x1b[32m   [OK] Ligne user existante, role mis a jour en admin\x1b[0m');
+
+        if (updateError) {
+            console.error('\x1b[31m   [ERREUR] Update user row: ' + updateError.message + '\x1b[0m');
+        } else {
+            console.log('\x1b[32m   [OK] Ligne user existante, role mis a jour en admin\x1b[0m');
+        }
     }
 }
 

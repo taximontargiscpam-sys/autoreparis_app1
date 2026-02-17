@@ -2,6 +2,16 @@
   "configVersion": 0,
   "apple": {
     "info": {
+      "en-US": {
+        "title": "AutoReparis OS",
+        "subtitle": "Auto repair shop management",
+        "description": "AutoReparis OS is the professional workshop management app for Auto Reparis garage in Drancy, France.\n\nKey features:\n\n• Real-time dashboard — Track ongoing repairs, weekly revenue, customer requests and stock levels at a glance.\n\n• Repair management — Create, schedule and track every repair from start to finish. Assign mechanics, add parts, upload photos and manage statuses.\n\n• Connected calendar — Team scheduling with availability management (present, off, leave). Schedule appointments and assign mechanics directly.\n\n• Customer management — Customer database with linked vehicles, repair history and contact details.\n\n• Stock & Scanner — Manage your inventory by category (mechanical, bodywork, maintenance, tires, batteries). Scan barcodes to quickly add parts.\n\n• Customer tracking — Your customers can track their repair progress in real-time using their license plate number.\n\n• Web requests — Receive and manage quote requests from your website in real-time with push notifications.\n\n• Performance analytics — View your revenue over 30 days with daily breakdown.\n\nDesigned for automotive repair professionals, AutoReparis OS simplifies the daily management of your garage.",
+        "keywords": ["garage", "repair", "mechanic", "workshop", "management", "automotive", "scheduling", "stock", "quote", "car", "bodywork"],
+        "promoText": "Manage your auto repair shop like a pro. Repairs, scheduling, stock and customer tracking — all in one app.",
+        "releaseNotes": "First release of AutoReparis OS.\n- Real-time KPI dashboard\n- Complete repair management\n- Connected team calendar\n- Barcode scanner for stock\n- Customer tracking by license plate\n- Push notifications for web requests",
+        "privacyPolicyUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html",
+        "termsOfServiceUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html"
+      },
       "fr-FR": {
         "title": "AutoReparis OS",
         "subtitle": "Gestion d'atelier automobile",
