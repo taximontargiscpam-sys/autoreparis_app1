@@ -1,17 +1,18 @@
 import { Link, Stack } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Page introuvable' }} />
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <Text style={styles.title}>Cette page n'existe pas.</Text>
 
         <Link href="/" style={styles.link}>
           <Text style={styles.linkText}>Retour à l'accueil</Text>
         </Link>
-      </View>
+      </SafeAreaView>
     </>
   );
 }

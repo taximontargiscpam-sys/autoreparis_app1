@@ -5,6 +5,7 @@ import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, Car, FileText, Mail, MapPin, Phone, Wrench } from 'lucide-react-native';
 import React from 'react';
 import { ActivityIndicator, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LeadDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -78,7 +79,7 @@ export default function LeadDetailScreen() {
     const date = formatDateSafe(lead.created_at || (lead as any).cree_a, "d MMMM yyyy 'à' HH:mm");
 
     return (
-        <View className="flex-1 bg-white dark:bg-slate-950">
+        <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
                 <View className="p-6">
                     {/* Header */}
@@ -164,6 +165,6 @@ export default function LeadDetailScreen() {
                     )}
                 </View>
             </View>
-        </View>
+        </SafeAreaView>
     );
 }

@@ -26,6 +26,9 @@
         "NSMicrophoneUsageDescription": "AutoReparis OS peut utiliser le microphone pour les enregistrements vidéo lors de la documentation des réparations.",
         "CFBundleLocalizations": [
           "fr"
+        ],
+        "UIBackgroundModes": [
+          "remote-notification"
         ]
       }
     },
@@ -47,6 +50,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-splash-screen",
       [
         "expo-camera",
         {

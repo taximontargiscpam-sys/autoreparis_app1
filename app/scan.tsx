@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Box, Check, Info, Plus, X } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ScanResult = {
     type: 'found' | 'unknown';
@@ -18,6 +19,7 @@ export default function CameraScreen() {
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
     const [scannedCode, setScannedCode] = useState<string | undefined>(undefined);
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
     const { data: foundProduct, isLoading: lookupLoading } = useProductByBarcode(scannedCode);
     const updateStock = useUpdateStock();
@@ -96,7 +98,7 @@ export default function CameraScreen() {
             />
 
             {/* Header / Back Button */}
-            <View className="absolute top-12 left-6 z-10">
+            <View className="absolute left-6 z-10" style={{ top: insets.top + 8 }}>
                 <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-black/40 rounded-full items-center justify-center">
                     <X color="white" size={24} />
                 </TouchableOpacity>

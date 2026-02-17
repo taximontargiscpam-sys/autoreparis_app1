@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Car, Mail, MapPin, Phone, User } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Linking, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ClientDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -35,8 +36,8 @@ export default function ClientDetailScreen() {
             } as Omit<Vehicle, 'id' | 'created_at'>);
             setModalVisible(false);
             setNewVehicle({ marque: '', modele: '', immatriculation: '' });
-        } catch (err: any) {
-            Alert.alert('Erreur', err.message);
+        } catch {
+            Alert.alert('Erreur', "Impossible d'ajouter le véhicule. Vérifiez les informations et réessayez.");
         }
     };
 
@@ -67,7 +68,8 @@ export default function ClientDetailScreen() {
     );
 
     return (
-        <ScrollView className="flex-1 bg-white dark:bg-slate-950">
+        <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+        <ScrollView className="flex-1">
             <View className="p-6">
                 <View className="items-center mb-8">
                     <View className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center mb-4">
@@ -196,5 +198,6 @@ export default function ClientDetailScreen() {
 
             </View>
         </ScrollView>
+        </SafeAreaView>
     );
 }

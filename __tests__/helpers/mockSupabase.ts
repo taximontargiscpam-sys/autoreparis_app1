@@ -9,7 +9,7 @@ export function createChainableMock() {
   const chain: any = {};
 
   const methods = [
-    'select', 'insert', 'update', 'delete',
+    'select', 'insert', 'update', 'upsert', 'delete',
     'eq', 'neq', 'or', 'in', 'gte', 'lte', 'lt',
     'order', 'range', 'single', 'maybeSingle',
   ];

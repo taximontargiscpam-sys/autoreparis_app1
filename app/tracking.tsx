@@ -325,7 +325,7 @@ export default function TrackingScreen() {
                                             resizeMode="cover"
                                         />
                                         <View className="absolute bottom-0 left-0 right-0 bg-black/50 p-2">
-                                            <Text className="text-white text-[10px] text-center">{format(new Date(photo.created_at), 'dd/MM HH:mm')}</Text>
+                                            <Text className="text-white text-[10px] text-center">{photo.created_at ? format(new Date(photo.created_at), 'dd/MM HH:mm') : ''}</Text>
                                         </View>
                                     </TouchableOpacity>
                                 ))}

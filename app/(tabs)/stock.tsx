@@ -47,7 +47,7 @@ export default function StockScreen() {
                 text: "Supprimer", style: "destructive",
                 onPress: () => {
                     deleteProduct.mutate(id, {
-                        onError: (error) => Alert.alert("Erreur", error.message),
+                        onError: () => Alert.alert("Erreur", "La suppression du produit a échoué. Veuillez réessayer."),
                     });
                 }
             }

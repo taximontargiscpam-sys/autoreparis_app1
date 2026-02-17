@@ -136,7 +136,7 @@ export default function InterventionDetailScreen() {
     }
 
     return (
-        <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+        <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950" edges={['top']}>
             {renderHeader()}
 
             {/* Tabs */}
@@ -195,6 +195,6 @@ export default function InterventionDetailScreen() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }

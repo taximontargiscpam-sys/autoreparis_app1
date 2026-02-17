@@ -35,7 +35,7 @@ export default function ClientsScreen() {
                     style: "destructive",
                     onPress: () => {
                         deleteClient.mutate(id, {
-                            onError: (error) => Alert.alert("Erreur", error.message),
+                            onError: () => Alert.alert("Erreur", "La suppression a échoué. Ce client a peut-être des interventions en cours."),
                         });
                     }
                 }

@@ -172,9 +172,9 @@ export default function NewInterventionScreen() {
             Alert.alert('Succès', 'Intervention planifiée avec succès !');
             router.back();
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             if (__DEV__) console.error(error);
-            Alert.alert('Erreur', error.message || 'Une erreur est survenue');
+            Alert.alert('Erreur', "La création de l'intervention a échoué. Vérifiez les informations et réessayez.");
         } finally {
             setLoading(false);
         }

@@ -52,14 +52,23 @@ describe('teamService', () => {
   });
 
   describe('saveAvailability', () => {
-    it('handles upsert logic', async () => {
-      mockChain._setResolved({ data: { id: 'existing-id' }, error: null });
+    it('uses upsert for atomic save', async () => {
+      mockChain._setResolved({ error: null });
 
       await teamService.saveAvailability([
         { user_id: 'u1', date: '2025-01-15', statut: 'repos' },
       ]);
 
-      expect(mockChain.select).toHaveBeenCalled();
+      expect(mockChain.upsert).toHaveBeenCalledWith(
+        [{ user_id: 'u1', date: '2025-01-15', statut: 'repos' }],
+        { onConflict: 'user_id,date' },
+      );
+    });
+
+    it('does nothing for empty records', async () => {
+      mockChain.upsert.mockClear();
+      await teamService.saveAvailability([]);
+      expect(mockChain.upsert).not.toHaveBeenCalled();
     });
   });
 

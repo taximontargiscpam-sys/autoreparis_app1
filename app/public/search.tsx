@@ -6,13 +6,13 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  SafeAreaView,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PublicSearchScreen() {
   const [immatriculation, setImmatriculation] = useState('');

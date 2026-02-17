@@ -80,7 +80,7 @@ export default function InterventionsScreen() {
                     style: "destructive",
                     onPress: () => {
                         deleteIntervention(id, {
-                            onError: (error) => Alert.alert("Erreur", error.message),
+                            onError: () => Alert.alert("Erreur", "La suppression de l'intervention a échoué. Veuillez réessayer."),
                         });
                     }
                 }

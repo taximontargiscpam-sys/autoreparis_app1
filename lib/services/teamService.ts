@@ -33,27 +33,11 @@ export const teamService = {
   },
 
   async saveAvailability(records: { user_id: string; date: string; statut: string }[]) {
-    for (const record of records) {
-      const { data: existing } = await supabase
-        .from('team_availability')
-        .select('id')
-        .eq('user_id', record.user_id)
-        .eq('date', record.date)
-        .maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from('team_availability')
-          .update({ statut: record.statut })
-          .eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('team_availability')
-          .insert([record]);
-        if (error) throw error;
-      }
-    }
+    if (records.length === 0) return;
+    const { error } = await supabase
+      .from('team_availability')
+      .upsert(records, { onConflict: 'user_id,date' });
+    if (error) throw error;
   },
 
   async createMember(member: { prenom: string; nom: string; role: string }) {
