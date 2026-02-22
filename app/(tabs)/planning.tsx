@@ -5,12 +5,13 @@ import { addDays, addMonths, eachDayOfInterval, endOfMonth, format, isSameDay, s
 import { fr } from 'date-fns/locale';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Wrench } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PlanningScreen() {
-    // Basic Data
-    const startDate = new Date();
-    const calendarDays = Array.from({ length: 60 }, (_, i) => addDays(startDate, i));
+    // Basic Data — memoized to avoid recreating 60 Date objects every render
+    const startDate = useMemo(() => new Date(), []);
+    const calendarDays = useMemo(() => Array.from({ length: 60 }, (_, i) => addDays(startDate, i)), [startDate]);
 
     // Global State
     const [selectedDate, setSelectedDate] = useState(startDate);
@@ -128,15 +129,15 @@ export default function PlanningScreen() {
 
     const handleSaveAvailability = async () => {
         if (!selectedUser) {
-            Alert.alert("Erreur", "Aucun utilisateur s\u00e9lectionn\u00e9 pour la sauvegarde.");
+            Alert.alert("Erreur", "Aucun utilisateur sélectionné pour la sauvegarde.");
             return;
         }
-        Alert.alert("Info", "Sauvegarde lanc\u00e9e...");
+        Alert.alert("Info", "Sauvegarde lancée...");
         try {
             const modifiedRecords = localMonthlyAvailability.filter(r => r._modified);
 
             if (modifiedRecords.length === 0) {
-                Alert.alert("Info", "Aucune modification \u00e0 sauvegarder.");
+                Alert.alert("Info", "Aucune modification à sauvegarder.");
                 setShowUserModal(false);
                 return;
             }
@@ -149,7 +150,7 @@ export default function PlanningScreen() {
                 }))
             );
 
-            Alert.alert("Succ\u00e8s", "Disponibilit\u00e9s mises \u00e0 jour !");
+            Alert.alert("Succès", "Disponibilités mises à jour !");
             setShowUserModal(false);
         } catch (err: any) {
             Alert.alert("Erreur", "Sauvegarde impossible. Veuillez réessayer ou contacter l'administrateur.");
@@ -160,7 +161,7 @@ export default function PlanningScreen() {
 
     const handleAssign = async () => {
         if (!selectedInterventionId || !selectedMechanicId) {
-            Alert.alert('Erreur', 'Veuillez s\u00e9lectionner une intervention et un m\u00e9canicien.');
+            Alert.alert('Erreur', 'Veuillez sélectionner une intervention et un mécanicien.');
             return;
         }
 
@@ -170,7 +171,7 @@ export default function PlanningScreen() {
                 mecanicienId: selectedMechanicId,
             });
 
-            Alert.alert('Succ\u00e8s', 'Intervention assign\u00e9e avec succ\u00e8s.');
+            Alert.alert('Succès', 'Intervention assignée avec succès.');
             setShowAssignModal(false);
             setSelectedInterventionId(null);
             setSelectedMechanicId(null);
@@ -190,7 +191,7 @@ export default function PlanningScreen() {
     return (
         <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
             <View className="p-6 pb-2">
-                <Text className="text-3xl font-black text-slate-900 dark:text-white mb-6">Planning Connect\u00e9</Text>
+                <Text className="text-3xl font-black text-slate-900 dark:text-white mb-6">Planning Connecté</Text>
 
                 {/* Visual Feedback for Loading */}
                 <View className="h-6 mb-2">
@@ -199,7 +200,7 @@ export default function PlanningScreen() {
 
                 {/* Team Planning Horizontal Strip */}
                 <View className="mb-6">
-                    <Text className="text-slate-500 font-bold text-xs uppercase tracking-wider mb-3">\u00c9quipe ({format(selectedDate, 'EEEE d', { locale: fr })})</Text>
+                    <Text className="text-slate-500 font-bold text-xs uppercase tracking-wider mb-3">Équipe ({format(selectedDate, 'EEEE d', { locale: fr })})</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6">
                         {users.map((user) => {
                             const availability = availabilities.find(a => a.user_id === user.id);
@@ -209,6 +210,8 @@ export default function PlanningScreen() {
                                 <TouchableOpacity
                                     key={user.id}
                                     onPress={() => handleUserClick(user)}
+                                    accessibilityLabel={`${user.prenom} ${user.nom}, ${isPresent ? 'présent' : 'absent'}`}
+                                    accessibilityRole="button"
                                     className={`mr-4 items-center justify-center p-4 rounded-2xl w-24 h-28 border ${isPresent ? 'bg-white border-slate-100' : 'bg-slate-100 border-slate-200 opacity-60'}`}
                                 >
                                     <View className={`w-10 h-10 rounded-full items-center justify-center mb-2 ${isPresent ? 'bg-green-100' : 'bg-slate-200'}`}>
@@ -216,8 +219,8 @@ export default function PlanningScreen() {
                                     </View>
                                     <Text className="font-bold text-slate-900 text-xs text-center mb-1" numberOfLines={1}>{user.prenom}</Text>
                                     <View className={`px-2 py-0.5 rounded-full ${isPresent ? 'bg-green-100' : 'bg-slate-200'}`}>
-                                        <Text className={`text-[8px] font-bold uppercase ${isPresent ? 'text-green-700' : 'text-slate-500'}`}>
-                                            {isPresent ? 'Pr\u00e9sent' : 'Absent'}
+                                        <Text className={`text-[10px] font-bold uppercase ${isPresent ? 'text-green-700' : 'text-slate-500'}`}>
+                                            {isPresent ? 'Présent' : 'Absent'}
                                         </Text>
                                     </View>
                                 </TouchableOpacity>
@@ -235,6 +238,9 @@ export default function PlanningScreen() {
                                 <TouchableOpacity
                                     key={index}
                                     onPress={() => setSelectedDate(date)}
+                                    accessibilityLabel={`${format(date, 'EEEE d MMMM', { locale: fr })}`}
+                                    accessibilityRole="tab"
+                                    accessibilityState={{ selected: isSelected }}
                                     className={`items-center justify-center w-14 h-20 rounded-2xl mr-3 ${isSelected ? 'bg-primary' : 'bg-white border border-slate-200'}`}
                                 >
                                     <Text className={`text-xs font-medium mb-1 ${isSelected ? 'text-white' : 'text-slate-400'}`}>{format(date, 'EEE', { locale: fr })}</Text>
@@ -256,6 +262,8 @@ export default function PlanningScreen() {
                     <TouchableOpacity
                         key={item.id}
                         onPress={() => setSelectedAppointment(item)}
+                        accessibilityLabel={`Rendez-vous ${item.clients?.nom || 'Client'}, ${item.vehicles?.marque || ''} ${item.vehicles?.modele || ''}`}
+                        accessibilityRole="button"
                         className={`bg-white dark:bg-slate-800 p-4 rounded-2xl mb-3 shadow-sm border-l-4 ${getStatusBorderColor(item.statut)} border-slate-100 dark:border-slate-700 active:scale-[0.98]`}
                     >
                         <View className="flex-row justify-between mb-2">
@@ -267,14 +275,14 @@ export default function PlanningScreen() {
                             </View>
                         </View>
                         <View className="flex-row items-center">
-                            <Text className="mr-2 text-xs">🔧</Text>
+                            <Wrench size={14} color="#64748b" style={{ marginRight: 8 }} />
                             <Text className="text-slate-500">{item.vehicles?.marque} {item.vehicles?.modele}</Text>
                         </View>
                     </TouchableOpacity>
                 ))}
 
                 {appointments.length === 0 && !loading && (
-                    <Text className="text-slate-400 italic text-center mt-4">Aucun rendez-vous</Text>
+                    <Text className="text-slate-500 italic text-center mt-4">Aucun rendez-vous</Text>
                 )}
                 <View className="h-20" />
             </ScrollView>
@@ -300,8 +308,8 @@ export default function PlanningScreen() {
                                         {selectedAppointment.vehicles?.marque} {selectedAppointment.vehicles?.modele}
                                     </Text>
                                 </View>
-                                <TouchableOpacity onPress={() => setSelectedAppointment(null)} className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center filter active:bg-slate-200">
-                                    <Text className="text-slate-500 font-bold text-lg">{'\u2715'}</Text>
+                                <TouchableOpacity onPress={() => setSelectedAppointment(null)} accessibilityLabel="Fermer" accessibilityRole="button" className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center filter active:bg-slate-200">
+                                    <Text className="text-slate-500 font-bold text-lg">✕</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -328,9 +336,9 @@ export default function PlanningScreen() {
                                             </Text>
                                         </View>
                                         <View>
-                                            <Text className="text-slate-400 text-xs font-bold uppercase">M\u00e9canicien</Text>
+                                            <Text className="text-slate-400 text-xs font-bold uppercase">Mécanicien</Text>
                                             <Text className="text-slate-900 dark:text-white font-bold text-base">
-                                                {selectedAppointment.mecanicien ? `${selectedAppointment.mecanicien.prenom} ${selectedAppointment.mecanicien.nom}` : 'Non assign\u00e9'}
+                                                {selectedAppointment.mecanicien ? `${selectedAppointment.mecanicien.prenom} ${selectedAppointment.mecanicien.nom}` : 'Non assigné'}
                                             </Text>
                                         </View>
                                     </View>
@@ -365,21 +373,21 @@ export default function PlanningScreen() {
                             <View className="flex-row justify-between items-center mb-6">
                                 <View>
                                     <Text className="text-2xl font-bold text-slate-900 dark:text-white">{selectedUser.prenom} {selectedUser.nom}</Text>
-                                    <Text className="text-slate-500">Disponibilit\u00e9s</Text>
+                                    <Text className="text-slate-500">Disponibilités</Text>
                                 </View>
-                                <TouchableOpacity onPress={() => setShowUserModal(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full">
-                                    <Text className="text-lg font-bold">{'\u2715'}</Text>
+                                <TouchableOpacity onPress={() => setShowUserModal(false)} accessibilityLabel="Fermer" accessibilityRole="button" className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center">
+                                    <Text className="text-lg font-bold">✕</Text>
                                 </TouchableOpacity>
                             </View>
 
                             {/* Month Nav */}
                             <View className="flex-row justify-between items-center mb-4 bg-slate-50 dark:bg-slate-800 p-2 rounded-xl">
-                                <TouchableOpacity onPress={() => setUserModalMonth(prev => subMonths(prev, 1))} className="p-2">
-                                    <Text className="text-2xl">{'\u2039'}</Text>
+                                <TouchableOpacity onPress={() => setUserModalMonth(prev => subMonths(prev, 1))} accessibilityLabel="Mois précédent" accessibilityRole="button" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} className="w-11 h-11 items-center justify-center">
+                                    <Text className="text-2xl">‹</Text>
                                 </TouchableOpacity>
                                 <Text className="font-bold text-lg capitalize">{format(userModalMonth, 'MMMM yyyy', { locale: fr })}</Text>
-                                <TouchableOpacity onPress={() => setUserModalMonth(prev => addMonths(prev, 1))} className="p-2">
-                                    <Text className="text-2xl">{'\u203a'}</Text>
+                                <TouchableOpacity onPress={() => setUserModalMonth(prev => addMonths(prev, 1))} accessibilityLabel="Mois suivant" accessibilityRole="button" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} className="w-11 h-11 items-center justify-center">
+                                    <Text className="text-2xl">›</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -421,7 +429,7 @@ export default function PlanningScreen() {
                             <View className="mt-4 flex-row justify-center space-x-4">
                                 <View className="flex-row items-center mr-4">
                                     <View className="w-3 h-3 rounded-full bg-green-500 mr-2" />
-                                    <Text className="text-xs text-slate-500">Pr\u00e9sent</Text>
+                                    <Text className="text-xs text-slate-500">Présent</Text>
                                 </View>
                                 <View className="flex-row items-center">
                                     <View className="w-3 h-3 rounded-full bg-red-500 mr-2" />
@@ -459,8 +467,8 @@ export default function PlanningScreen() {
                         <View className="bg-white dark:bg-slate-900 rounded-t-[30px] p-6 h-[70%] w-full">
                             <View className="flex-row justify-between items-center mb-6">
                                 <Text className="text-xl font-bold text-slate-900 dark:text-white">Planifier</Text>
-                                <TouchableOpacity onPress={() => setShowAssignModal(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full">
-                                    <Text className="text-lg font-bold">{'\u2715'}</Text>
+                                <TouchableOpacity onPress={() => setShowAssignModal(false)} accessibilityLabel="Fermer" accessibilityRole="button" className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center">
+                                    <Text className="text-lg font-bold">✕</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -477,11 +485,11 @@ export default function PlanningScreen() {
                                         </TouchableOpacity>
                                     ))}
                                     {appointments.filter(a => !a.mecanicien_id).length === 0 && (
-                                        <Text className="text-slate-400 italic">Aucune intervention \u00e0 assigner</Text>
+                                        <Text className="text-slate-400 italic">Aucune intervention à assigner</Text>
                                     )}
                                 </ScrollView>
 
-                                <Text className="text-slate-500 font-bold uppercase text-xs mb-3">2. M\u00e9canicien</Text>
+                                <Text className="text-slate-500 font-bold uppercase text-xs mb-3">2. Mécanicien</Text>
                                 <View className="flex-row flex-wrap mb-6">
                                     {users.map((user) => (
                                         <TouchableOpacity
@@ -510,6 +518,8 @@ export default function PlanningScreen() {
             {/* FAB Button */}
             <TouchableOpacity
                 onPress={() => setShowAssignModal(true)}
+                accessibilityLabel="Assigner une intervention"
+                accessibilityRole="button"
                 className="absolute bottom-6 right-6 bg-primary px-5 py-3 rounded-full flex-row items-center justify-center shadow-lg shadow-blue-500/50"
             >
                 <Text className="text-white text-xl mr-2">+</Text>

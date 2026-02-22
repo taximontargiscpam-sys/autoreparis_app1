@@ -1,5 +1,6 @@
-import { useDeleteProduct, useInfiniteProducts } from '@/lib/hooks/useProducts';
+import ErrorState from '@/components/ErrorState';
 import type { Product } from '@/lib/database.types';
+import { useDeleteProduct, useInfiniteProducts } from '@/lib/hooks/useProducts';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Package, ScanLine, Trash2 } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
@@ -22,7 +23,7 @@ export default function StockScreen() {
     const [selectedCategory, setSelectedCategory] = useState<string>('Tous');
 
     const queryCategory = CATEGORY_MAP[selectedCategory] ?? 'all';
-    const { data, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteProducts(queryCategory);
+    const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteProducts(queryCategory);
     const deleteProduct = useDeleteProduct();
 
     const products: Product[] = useMemo(() => data?.pages.flatMap(p => p.data) ?? [], [data?.pages]);
@@ -55,10 +56,12 @@ export default function StockScreen() {
     };
 
 
-    const renderRightActions = (_progress: any, _dragX: any, id: string, nom: string) => {
+    const renderRightActions = (_progress: unknown, _dragX: unknown, id: string, nom: string) => {
         return (
             <TouchableOpacity
                 onPress={() => handleDelete(id, nom)}
+                accessibilityLabel={`Supprimer ${nom}`}
+                accessibilityRole="button"
                 className="bg-red-500 justify-center items-center w-16 mb-3 rounded-r-2xl"
             >
                 <Trash2 size={24} color="white" />
@@ -93,6 +96,9 @@ export default function StockScreen() {
                         renderItem={({ item }) => (
                             <TouchableOpacity
                                 onPress={() => setSelectedCategory(item)}
+                                accessibilityLabel={`Catégorie ${item}`}
+                                accessibilityRole="tab"
+                                accessibilityState={{ selected: selectedCategory === item }}
                                 className={`mr-2 px-5 py-2.5 rounded-full border ${selectedCategory === item ? 'bg-slate-900 border-slate-900' : 'bg-white border-slate-200'}`}
                             >
                                 <Text className={`font-bold ${selectedCategory === item ? 'text-white' : 'text-slate-600'}`}>{item}</Text>
@@ -105,6 +111,8 @@ export default function StockScreen() {
                     <View className="flex-1 justify-center items-center">
                         <ActivityIndicator size="large" color="#16a34a" />
                     </View>
+                ) : isError ? (
+                    <ErrorState onRetry={() => refetch()} />
                 ) : (
                     <FlatList
                         data={products}
@@ -128,6 +136,8 @@ export default function StockScreen() {
                             <Swipeable renderRightActions={(p, d) => renderRightActions(p, d, item.id, item.nom)}>
                                 <TouchableOpacity
                                     onPress={() => router.push({ pathname: '/products/[id]', params: { id: item.id } })}
+                                    accessibilityLabel={`Produit ${item.nom}, ${item.stock_actuel} en stock`}
+                                    accessibilityRole="button"
                                     className="bg-white p-4 rounded-2xl mb-3 flex-row items-center border border-slate-100 shadow-sm"
                                 >
                                     {/* Left: Image Placeholder */}
@@ -135,7 +145,7 @@ export default function StockScreen() {
                                         <Package size={24} color="#64748b" />
                                         {/* Category Badge */}
                                         <View className="absolute -top-2 -left-2 bg-slate-800 px-1.5 py-0.5 rounded-md">
-                                            <Text className="text-[8px] text-white uppercase font-bold">{item.categorie?.substring(0, 3) || 'DIV'}</Text>
+                                            <Text className="text-[10px] text-white uppercase font-bold">{item.categorie?.substring(0, 3) || 'DIV'}</Text>
                                         </View>
                                     </View>
 
@@ -154,7 +164,7 @@ export default function StockScreen() {
                                     {/* Right: Price */}
                                     <View className="items-end">
                                         <Text className="font-black text-slate-900 text-lg">{item.prix_vente_unitaire || 0} €</Text>
-                                        <Text className="text-slate-400 text-[10px]">Prix vente</Text>
+                                        <Text className="text-slate-500 text-xs">Prix vente</Text>
                                     </View>
                                 </TouchableOpacity>
                             </Swipeable>

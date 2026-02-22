@@ -9,7 +9,7 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 // Mock Expo Libraries that might cause issues in Node environment
 jest.mock('expo-font');
 jest.mock('expo-constants', () => ({
-    manifest: { extra: {} },
+    expoConfig: { extra: {} },
 }));
 
 // Mock Supabase (Partial)

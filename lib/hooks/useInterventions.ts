@@ -37,6 +37,7 @@ export function useUpdateInterventionStatus() {
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['intervention', variables.id] });
       qc.invalidateQueries({ queryKey: ['interventions'] });
+      qc.invalidateQueries({ queryKey: ['interventions-infinite'] });
       qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
     },
   });
@@ -48,6 +49,7 @@ export function useDeleteIntervention() {
     mutationFn: (id: string) => interventionService.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['interventions'] });
+      qc.invalidateQueries({ queryKey: ['interventions-infinite'] });
       qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
     },
   });
@@ -58,8 +60,11 @@ export function useAssignMechanic() {
   return useMutation({
     mutationFn: ({ interventionId, mecanicienId }: { interventionId: string; mecanicienId: string }) =>
       interventionService.assignMechanic(interventionId, mecanicienId),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['intervention', variables.interventionId] });
       qc.invalidateQueries({ queryKey: ['interventions'] });
+      qc.invalidateQueries({ queryKey: ['interventions-infinite'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
     },
   });
 }

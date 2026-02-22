@@ -4,7 +4,7 @@ import { Calendar, Inbox, LayoutDashboard, Package, Users, Wrench } from 'lucide
 import React from 'react';
 
 function TabBarIcon(props: {
-  icon: any;
+  icon: React.ComponentType<{ size: number; color: string; style?: object }>;
   color: string;
 }) {
   const Icon = props.icon;

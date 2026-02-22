@@ -175,7 +175,7 @@ export default function ProductDetailScreen() {
                                         Stock: {move.stock_avant} → {move.stock_apres} • Par {move.users?.prenom || 'Inconnu'}
                                     </Text>
                                     <Text className="text-slate-600 text-[10px] mt-2">
-                                        {new Date(move.created_at).toLocaleString()}
+                                        {new Date(move.created_at).toLocaleString('fr-FR')}
                                     </Text>
                                 </View>
                             </View>

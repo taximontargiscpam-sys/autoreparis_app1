@@ -1,8 +1,9 @@
+import ErrorState from '@/components/ErrorState';
 import { KPICard } from '@/components/KPICard';
 import { useDashboardStats } from '@/lib/hooks/useInterventions';
 import { useRouter } from 'expo-router';
 import { AlertTriangle, Plus, ScanBarcode, TrendingUp, Users, Wrench } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function DashboardScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
-  const { data, refetch } = useDashboardStats();
+  const { data, isError, refetch } = useDashboardStats();
 
   const stats = data ?? {
     interventionsCount: 0,
@@ -19,11 +20,24 @@ export default function DashboardScreen() {
     revenue: 0,
   };
 
+  const todayLabel = useMemo(
+    () => new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),
+    []
+  );
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
   }, [refetch]);
+
+  if (isError) {
+    return (
+      <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
+        <ErrorState onRetry={() => refetch()} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-950">
@@ -36,7 +50,7 @@ export default function DashboardScreen() {
           <View className="flex-row justify-between items-center mb-6 mt-1">
             <View>
               <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">
-                {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {todayLabel}
               </Text>
               <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Auto Reparis</Text>
             </View>

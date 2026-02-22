@@ -82,15 +82,15 @@ export default function ClientDetailScreen() {
                 </View>
 
                 <View className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-5 mb-6">
-                    <Text className="text-lg font-bold text-slate-900 dark:text-white mb-4">Coordonnees</Text>
+                    <Text className="text-lg font-bold text-slate-900 dark:text-white mb-4">Coordonnées</Text>
 
                     <TouchableOpacity onPress={handleCall} className="flex-row items-center py-3 border-b border-slate-200 dark:border-slate-800">
                         <View className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 items-center justify-center mr-4">
                             <Phone size={20} className="text-slate-600 dark:text-slate-400" />
                         </View>
                         <View>
-                            <Text className="text-slate-500 text-xs font-bold uppercase">Telephone</Text>
-                            <Text className="text-blue-600 font-medium text-base">{client.telephone || 'Non renseigne'}</Text>
+                            <Text className="text-slate-500 text-xs font-bold uppercase">Téléphone</Text>
+                            <Text className="text-blue-600 font-medium text-base">{client.telephone || 'Non renseigné'}</Text>
                         </View>
                     </TouchableOpacity>
 
@@ -100,7 +100,7 @@ export default function ClientDetailScreen() {
                         </View>
                         <View>
                             <Text className="text-slate-500 text-xs font-bold uppercase">Email</Text>
-                            <Text className="text-blue-600 font-medium text-base">{client.email || 'Non renseigne'}</Text>
+                            <Text className="text-blue-600 font-medium text-base">{client.email || 'Non renseigné'}</Text>
                         </View>
                     </TouchableOpacity>
 
@@ -120,7 +120,7 @@ export default function ClientDetailScreen() {
                 {/* Vehicles List */}
                 <View className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-5 mb-6">
                     <View className="flex-row justify-between items-center mb-4">
-                        <Text className="text-lg font-bold text-slate-900 dark:text-white">Vehicules ({vehicleList.length})</Text>
+                        <Text className="text-lg font-bold text-slate-900 dark:text-white">Véhicules ({vehicleList.length})</Text>
                         <TouchableOpacity
                             onPress={() => setModalVisible(true)}
                             className="bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full"
@@ -132,7 +132,7 @@ export default function ClientDetailScreen() {
                     {vehicleList.length === 0 ? (
                         <View className="items-center py-6">
                             <Car size={32} className="text-slate-300 mb-2" />
-                            <Text className="text-slate-400 text-sm">Aucun vehicule associe</Text>
+                            <Text className="text-slate-500 text-sm">Aucun véhicule associé</Text>
                         </View>
                     ) : (
                         vehicleList.map(v => (
@@ -156,7 +156,7 @@ export default function ClientDetailScreen() {
                             className="absolute inset-0 bg-black/50"
                         />
                         <View className="bg-white dark:bg-slate-900 w-[90%] rounded-2xl p-6 shadow-xl">
-                            <Text className="text-xl font-bold text-slate-900 dark:text-white mb-6">Nouveau Vehicule</Text>
+                            <Text className="text-xl font-bold text-slate-900 dark:text-white mb-6">Nouveau Véhicule</Text>
 
                             <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Marque</Text>
                             <TextInput
@@ -167,7 +167,7 @@ export default function ClientDetailScreen() {
                                 onChangeText={t => setNewVehicle({ ...newVehicle, marque: t })}
                             />
 
-                            <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Modele</Text>
+                            <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Modèle</Text>
                             <TextInput
                                 className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl mb-4 text-slate-900 dark:text-white"
                                 placeholder="Clio V"

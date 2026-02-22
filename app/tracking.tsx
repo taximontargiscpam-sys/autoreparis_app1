@@ -4,47 +4,53 @@ import { fr } from 'date-fns/locale';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Calendar, CheckCircle, Clock, Hammer, Image as ImageIcon, Info, User, Wrench } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
+import type { InterventionLine, InterventionStatus, VehiclePhoto } from '../lib/database.types';
 
-const { width } = Dimensions.get('window');
-
-async function fetchInterventionData(targetId: string) {
-    // 1. Try to fetch as authenticated user (RLS will allow if logged in)
-    const { data: authData, error: authError } = await supabase
-        .from('interventions')
-        .select(`
-            *,
-            vehicles (*),
-            mecanicien: users (nom, prenom),
-            lines: intervention_lines (*),
-            photos: vehicle_photos (*)
-        `)
-        .eq('id', targetId)
-        .single();
-
-    if (!authError && authData) {
-        return authData;
-    }
-
-    // 2. Fallback: Use Public RPC if anonymous or auth failed (and not a permission error we want to block)
-    // The RPC returns a JSON object that matches the structure we need
-    const { data: rpcData, error: rpcError } = await supabase
-        .rpc('get_intervention_details_public', { intervention_id: targetId });
-
-    if (rpcError) throw rpcError;
-    return rpcData;
+interface TrackingIntervention {
+    id: string;
+    statut: InterventionStatus;
+    type_intervention: string | null;
+    commentaire: string | null;
+    date_heure_fin_prevue: string | null;
+    total_ttc: number | null;
+    created_at: string;
+    vehicles: { immatriculation: string; marque: string; modele: string } | null;
+    mecanicien: { nom: string | null; prenom: string | null } | null;
+    lines: InterventionLine[];
+    photos: VehiclePhoto[];
 }
 
-function generateTimeline(data: any) {
-    const events: any[] = [];
+interface TimelineEvent {
+    id: string;
+    type: string;
+    title: string;
+    subtitle?: string;
+    date: string;
+    icon: React.ComponentType<{ size: number; color: string }>;
+    color: string;
+    isHighlight?: boolean;
+}
+
+async function fetchInterventionData(targetId: string) {
+    // Always use the public RPC to expose only the data intended for tracking
+    const { data, error } = await supabase
+        .rpc('get_intervention_details_public', { intervention_id: targetId });
+
+    if (error) throw error;
+    return data;
+}
+
+function generateTimeline(data: TrackingIntervention): TimelineEvent[] {
+    const events: TimelineEvent[] = [];
 
     // 1. Creation Event
     events.push({
         id: 'created',
         type: 'status',
-        title: 'Prise en charge du vehicule',
+        title: 'Prise en charge du véhicule',
         date: data.created_at,
         icon: Calendar,
         color: 'bg-blue-500'
@@ -52,13 +58,13 @@ function generateTimeline(data: any) {
 
     // 2. Add specific lines (Parts/Labor) as events
     if (data.lines) {
-        data.lines.forEach((line: any) => {
+        data.lines.forEach((line) => {
             events.push({
                 id: line.id,
-                type: line.type_ligne,
-                title: line.description || (line.type_ligne === 'piece' ? 'Piece ajoutee' : 'Main d\'oeuvre'),
-                subtitle: line.quantite > 1 ? `${line.quantite}x - Ajoute a la reparation` : 'Ajoute a la reparation',
-                date: line.created_at || data.created_at,
+                type: line.type_ligne || 'piece',
+                title: line.description || (line.type_ligne === 'piece' ? 'Pièce ajoutée' : 'Main d\'oeuvre'),
+                subtitle: line.quantite > 1 ? `${line.quantite}x - Ajouté à la réparation` : 'Ajouté à la réparation',
+                date: data.created_at,
                 icon: line.type_ligne === 'piece' ? Wrench : Hammer,
                 color: line.type_ligne === 'piece' ? 'bg-orange-500' : 'bg-purple-500'
             });
@@ -91,8 +97,10 @@ export default function TrackingScreen() {
 
     const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
+    const { width } = useWindowDimensions();
+
     // React Query for initial data fetch and cache management
-    const { data: intervention, isLoading } = useQuery({
+    const { data: intervention, isLoading } = useQuery<TrackingIntervention>({
         queryKey: ['tracking', id],
         queryFn: () => fetchInterventionData(id!),
         enabled: !!id,
@@ -143,8 +151,8 @@ export default function TrackingScreen() {
         </SafeAreaView>
     );
 
-    const parts = intervention.lines?.filter((line: any) => line.type_ligne === 'piece') || [];
-    const labor = intervention.lines?.filter((line: any) => line.type_ligne === 'main_oeuvre') || [];
+    const parts = intervention.lines?.filter((line) => line.type_ligne === 'piece') || [];
+    const labor = intervention.lines?.filter((line) => line.type_ligne === 'main_oeuvre') || [];
     const photos = intervention.photos || [];
 
     return (
@@ -188,7 +196,7 @@ export default function TrackingScreen() {
                                 <Text className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Estimation de fin</Text>
                                 <Text className="text-3xl font-bold text-white mb-2">
                                     {intervention.date_heure_fin_prevue
-                                        ? format(new Date(intervention.date_heure_fin_prevue), 'dd MMM a HH:mm', { locale: fr })
+                                        ? format(new Date(intervention.date_heure_fin_prevue), "dd MMM 'à' HH:mm", { locale: fr })
                                         : 'A confirmer'}
                                 </Text>
                                 {intervention.mecanicien && (
@@ -260,7 +268,7 @@ export default function TrackingScreen() {
 
                         {/* Parts List */}
                         <Text className="text-slate-400 font-bold mb-4 uppercase text-[10px] tracking-wider ml-1">Pieces ({parts.length})</Text>
-                        {parts.length > 0 ? parts.map((line: any, index: number) => (
+                        {parts.length > 0 ? parts.map((line) => (
                             <View key={line.id} className="bg-slate-800/50 p-4 rounded-2xl mb-3 border border-slate-800 flex-row justify-between items-center">
                                 <View className="flex-row items-center flex-1">
                                     <View className="w-10 h-10 bg-orange-500/10 rounded-xl items-center justify-center mr-3">
@@ -271,7 +279,7 @@ export default function TrackingScreen() {
                                         <Text className="text-slate-500 text-xs text-slate-400">Quantite: {line.quantite}</Text>
                                     </View>
                                 </View>
-                                <Text className="text-white font-bold">{line.montant_ttc} </Text>
+                                <Text className="text-white font-bold">{line.total_vente_ligne} €</Text>
                             </View>
                         )) : (
                             <Text className="text-slate-600 italic mb-6 ml-1">Aucune piece listee</Text>
@@ -279,7 +287,7 @@ export default function TrackingScreen() {
 
                         {/* Labor List */}
                         <Text className="text-slate-400 font-bold mt-4 mb-4 uppercase text-[10px] tracking-wider ml-1">Main d'oeuvre</Text>
-                        {labor.length > 0 ? labor.map((line: any, index: number) => (
+                        {labor.length > 0 ? labor.map((line) => (
                             <View key={line.id} className="bg-slate-800/50 p-4 rounded-2xl mb-3 border border-slate-800 flex-row justify-between items-center">
                                 <View className="flex-row items-center flex-1">
                                     <View className="w-10 h-10 bg-purple-500/10 rounded-xl items-center justify-center mr-3">
@@ -290,7 +298,7 @@ export default function TrackingScreen() {
                                         <Text className="text-slate-500 text-xs text-slate-400">Temps passe</Text>
                                     </View>
                                 </View>
-                                <Text className="text-white font-bold">{line.montant_ttc} </Text>
+                                <Text className="text-white font-bold">{line.total_vente_ligne} €</Text>
                             </View>
                         )) : (
                             <Text className="text-slate-600 italic ml-1">Aucune main d'oeuvre listee</Text>
@@ -313,14 +321,14 @@ export default function TrackingScreen() {
                             </View>
                         ) : (
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="gap-3">
-                                {photos.map((photo: any) => (
+                                {photos.map((photo) => (
                                     <TouchableOpacity
                                         key={photo.id}
-                                        onPress={() => setSelectedPhoto(photo.url_image || photo.photo_url)}
+                                        onPress={() => setSelectedPhoto(photo.url_image)}
                                         className="w-40 h-56 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 relative"
                                     >
                                         <Image
-                                            source={{ uri: photo.url_image || photo.photo_url }}
+                                            source={{ uri: photo.url_image }}
                                             style={{ width: '100%', height: '100%' }}
                                             resizeMode="cover"
                                         />

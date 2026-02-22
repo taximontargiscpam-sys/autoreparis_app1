@@ -1,6 +1,7 @@
+import ErrorState from '@/components/ErrorState';
 import { StatusBadge } from '@/components/StatusBadge';
-import { useDeleteIntervention, useInfiniteInterventions } from '@/lib/hooks/useInterventions';
 import type { InterventionWithRelations } from '@/lib/database.types';
+import { useDeleteIntervention, useInfiniteInterventions } from '@/lib/hooks/useInterventions';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useRouter } from 'expo-router';
@@ -20,7 +21,7 @@ export default function InterventionsScreen() {
     const [search, setSearch] = useState('');
     const [activeFilter, setActiveFilter] = useState('Tous');
 
-    const { data, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteInterventions();
+    const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteInterventions();
     const { mutate: deleteIntervention } = useDeleteIntervention();
 
     const allInterventions: InterventionWithRelations[] = useMemo(() => {
@@ -89,10 +90,12 @@ export default function InterventionsScreen() {
     };
 
 
-    const renderRightActions = (_progress: any, _dragX: any, id: string) => {
+    const renderRightActions = (_progress: unknown, _dragX: unknown, id: string) => {
         return (
             <TouchableOpacity
                 onPress={() => handleDelete(id)}
+                accessibilityLabel="Supprimer l'intervention"
+                accessibilityRole="button"
                 className="bg-red-500 justify-center items-center w-16 mb-4 rounded-r-2xl"
             >
                 <Trash2 size={24} color="white" />
@@ -108,6 +111,8 @@ export default function InterventionsScreen() {
             <Swipeable renderRightActions={(p, d) => renderRightActions(p, d, item.id)}>
                 <TouchableOpacity
                     onPress={() => router.push({ pathname: '/interventions/[id]', params: { id: item.id } })}
+                    accessibilityLabel={`Intervention ${vehicleName}, ${clientName}`}
+                    accessibilityRole="button"
                     className="bg-white dark:bg-slate-800 p-5 rounded-2xl mb-4 shadow-sm border border-slate-100 dark:border-slate-700 active:scale-[0.98]">
                     <View className="flex-row justify-between items-start mb-3">
                         <View className="flex-row items-center">
@@ -176,6 +181,9 @@ export default function InterventionsScreen() {
                         renderItem={({ item }) => (
                             <TouchableOpacity
                                 onPress={() => setActiveFilter(item.value)}
+                                accessibilityLabel={`Filtre ${item.label}`}
+                                accessibilityRole="tab"
+                                accessibilityState={{ selected: activeFilter === item.value }}
                                 className={`px-5 py-2.5 rounded-full mr-3 border ${activeFilter === item.value ? 'bg-slate-900 border-slate-900 dark:bg-white dark:border-white' : 'bg-transparent border-slate-300 dark:border-slate-700'}`}
                             >
                                 <Text className={`font-semibold ${activeFilter === item.value ? 'text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400'}`}>
@@ -191,6 +199,8 @@ export default function InterventionsScreen() {
                 <View className="flex-1 justify-center items-center">
                     <ActivityIndicator size="large" color="#0f172a" />
                 </View>
+            ) : isError ? (
+                <ErrorState onRetry={() => refetch()} />
             ) : (
                 <FlatList
                     className="flex-1 px-6"
@@ -221,7 +231,7 @@ export default function InterventionsScreen() {
                             <View className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center mb-4">
                                 <Wrench size={32} color="#cbd5e1" />
                             </View>
-                            <Text className="text-slate-500 font-medium">Aucune intervention trouvée</Text>
+                            <Text className="text-slate-600 font-medium">Aucune intervention trouvée</Text>
                         </View>
                     }
                 />
@@ -229,6 +239,8 @@ export default function InterventionsScreen() {
 
             <TouchableOpacity
                 onPress={() => router.push('/interventions/new')}
+                accessibilityLabel="Nouvelle intervention"
+                accessibilityRole="button"
                 className="absolute bottom-6 right-6 bg-secondary w-16 h-16 rounded-full items-center justify-center shadow-lg shadow-orange-500/40"
             >
                 <Plus color="white" size={32} />

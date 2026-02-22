@@ -9,6 +9,10 @@ jest.mock('../../lib/supabase', () => ({
 import { supabase } from '../../lib/supabase';
 
 describe('teamService', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('listMembers', () => {
     it('returns active team members', async () => {
       mockChain._setResolved({

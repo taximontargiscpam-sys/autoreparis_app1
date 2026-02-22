@@ -9,6 +9,10 @@ jest.mock('../../lib/supabaseWebsite', () => ({
 import { supabaseWebsite } from '../../lib/supabaseWebsite';
 
 describe('leadService', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('list', () => {
     it('returns leads', async () => {
       mockChain._setResolved({

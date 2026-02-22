@@ -55,12 +55,25 @@ export default function InterventionPhotos({ intervention }: InterventionPhotosP
         };
     }, [intervention.id, isDummy, refetch]);
 
-    // --- Mutation: upload photo ---
+    // --- Mutation: upload photo to Storage then save URL ---
     const uploadMutation = useMutation({
         mutationFn: async (uri: string) => {
+            const fileName = `interventions/${intervention.id}/${Date.now()}.jpg`;
+            const response = await fetch(uri);
+            const blob = await response.blob();
+
+            const { error: uploadError } = await supabase.storage
+                .from('vehicle-photos')
+                .upload(fileName, blob, { contentType: 'image/jpeg' });
+            if (uploadError) throw uploadError;
+
+            const { data: publicUrlData } = supabase.storage
+                .from('vehicle-photos')
+                .getPublicUrl(fileName);
+
             const { error } = await supabase.from('vehicle_photos').insert([{
                 intervention_id: intervention.id,
-                url_image: uri,
+                url_image: publicUrlData.publicUrl,
                 type: 'photo_constat',
                 commentaire: 'Ajouté depuis l\'app',
             }]);
@@ -90,13 +103,11 @@ export default function InterventionPhotos({ intervention }: InterventionPhotosP
     const pickImage = async () => {
         // No permissions request is necessary for launching the image library
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [4, 3],
             quality: 0.5,
-            maxWidth: 1200,
-            maxHeight: 1200,
-        } as ImagePicker.ImagePickerOptions);
+        });
 
         if (!result.canceled) {
             handleUpload(result.assets[0].uri);
@@ -111,12 +122,11 @@ export default function InterventionPhotos({ intervention }: InterventionPhotosP
         }
 
         let result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [4, 3],
             quality: 0.5,
-            maxWidth: 1200,
-            maxHeight: 1200,
-        } as ImagePicker.ImagePickerOptions);
+        });
 
         if (!result.canceled) {
             handleUpload(result.assets[0].uri);

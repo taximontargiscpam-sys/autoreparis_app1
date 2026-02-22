@@ -55,6 +55,6 @@ export async function sendLocalNotification(title: string, body: string, data = 
             data,
             sound: true,
         },
-        trigger: null as any,
+        trigger: null,
     });
 }

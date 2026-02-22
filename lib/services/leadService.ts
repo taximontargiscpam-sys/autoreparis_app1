@@ -1,4 +1,4 @@
-import type { DevisAuto } from '../database.types';
+import type { DevisAuto, LeadStatus } from '../database.types';
 import { supabaseWebsite } from '../supabaseWebsite';
 
 export const leadService = {
@@ -9,8 +9,7 @@ export const leadService = {
       .order('created_at', { ascending: false });
 
     if (search.trim()) {
-      const sanitized = search.replace(/[%_,()]/g, '');
-      query = query.or(`nom.ilike.%${sanitized}%,email.ilike.%${sanitized}%`);
+      query = query.or(`nom.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`);
     }
 
     const { data, error } = await query;
@@ -28,7 +27,7 @@ export const leadService = {
     return data as DevisAuto;
   },
 
-  async updateStatus(id: string, statut: string) {
+  async updateStatus(id: string, statut: LeadStatus | string) {
     const { error } = await supabaseWebsite
       .from('devis_auto')
       .update({ statut })

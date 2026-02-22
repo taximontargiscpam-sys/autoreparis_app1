@@ -1,5 +1,6 @@
 import type { InterventionStatus, InterventionWithRelations } from '../database.types';
 import { supabase } from '../supabase';
+import { supabaseWebsite } from '../supabaseWebsite';
 
 const PAGE_SIZE = 30;
 
@@ -68,7 +69,7 @@ export const interventionService = {
     const [interventions, stock, leads, revenue] = await Promise.all([
       supabase.from('interventions').select('*', { count: 'exact', head: true }).neq('statut', 'terminee'),
       supabase.from('products').select('*', { count: 'exact', head: true }).lt('stock_actuel', 5),
-      supabase.from('leads_site_web').select('*', { count: 'exact', head: true }).eq('statut', 'nouveau'),
+      supabaseWebsite.from('devis_auto').select('*', { count: 'exact', head: true }).eq('statut', 'nouveau'),
       (() => {
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
@@ -79,6 +80,11 @@ export const interventionService = {
           .gte('created_at', weekAgo.toISOString());
       })(),
     ]);
+
+    if (interventions.error) throw interventions.error;
+    if (stock.error) throw stock.error;
+    if (leads.error) throw leads.error;
+    if (revenue.error) throw revenue.error;
 
     const weeklyRevenue = revenue.data?.reduce((acc, curr) => acc + (curr.total_vente || 0), 0) ?? 0;
 

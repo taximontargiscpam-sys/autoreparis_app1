@@ -5,7 +5,7 @@ export function useLeads(search = '') {
   return useQuery({
     queryKey: ['leads', search],
     queryFn: () => leadService.list(search),
-    staleTime: 1000 * 15,
+    staleTime: 1000 * 60 * 5, // 5 minutes — Realtime subscription handles freshness
   });
 }
 

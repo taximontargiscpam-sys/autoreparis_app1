@@ -1,6 +1,6 @@
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Product } from '../database.types';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../components/AuthContext';
+import type { Product } from '../database.types';
 import { productService } from '../services/productService';
 
 export function useProducts(category = 'all', page = 0) {
@@ -80,6 +80,7 @@ export function useCreateProduct() {
     mutationFn: (product: Omit<Product, 'id' | 'created_at'>) => productService.create(product),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
     },
   });
 }

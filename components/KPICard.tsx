@@ -22,6 +22,8 @@ export function KPICard({ title, value, icon: Icon, color, delay, onPress, trend
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={onPress}
+        accessibilityLabel={`${title}: ${value}`}
+        accessibilityRole="button"
         className="bg-white dark:bg-slate-900 p-4 rounded-[24px] shadow-sm border border-slate-100 dark:border-slate-800/50 h-32 justify-between"
       >
         <View className="flex-row justify-between items-start">

@@ -198,11 +198,25 @@ export interface DevisAuto {
   id: string;
   nom: string | null;
   prenom: string | null;
+  prénom?: string | null;
   telephone: string | null;
+  tel?: string | null;
   email: string | null;
   message: string | null;
+  description?: string | null;
   vehicle_model: string | null;
+  marque?: string | null;
+  modele?: string | null;
+  annee?: number | null;
+  immatriculation?: string | null;
+  plaque?: string | null;
   projet: string | null;
   statut: string | null;
+  service_souhaite?: string | null;
+  date_souhaitee?: string | null;
+  code_postal?: string | null;
+  ville?: string | null;
+  adresse?: string | null;
+  cree_a?: string | null;
   created_at: string;
 }

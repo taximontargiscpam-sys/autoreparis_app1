@@ -8,8 +8,8 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Building2, Lock, LogOut, Mail, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function GarageProfileScreen() {
     const router = useRouter();
@@ -99,10 +99,12 @@ export default function GarageProfileScreen() {
     };
 
 
-    const renderRightActions = (_progress: any, _dragX: any, member: User) => {
+    const renderRightActions = (_progress: unknown, _dragX: unknown, member: User) => {
         return (
             <TouchableOpacity
                 onPress={() => handleDeleteMember(member)}
+                accessibilityLabel={`Supprimer ${member.prenom} ${member.nom}`}
+                accessibilityRole="button"
                 className="bg-red-500 justify-center items-center w-20 mb-3 rounded-r-[24px]"
             >
                 <Trash2 size={24} color="white" />
@@ -141,6 +143,8 @@ export default function GarageProfileScreen() {
                     <View className="flex-row items-center mb-8">
                         <TouchableOpacity
                             onPress={() => router.back()}
+                            accessibilityLabel="Retour"
+                            accessibilityRole="button"
                             className="w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm mr-4 active:scale-95"
                         >
                             <ArrowLeft color="#64748b" size={24} />
@@ -180,6 +184,8 @@ export default function GarageProfileScreen() {
                                     </View>
                                     <TouchableOpacity
                                         onPress={() => setShowPasswordModal(true)}
+                                        accessibilityLabel="Modifier le mot de passe"
+                                        accessibilityRole="button"
                                         className="bg-white/20 px-4 py-2 rounded-full border border-white/10 active:bg-white/30"
                                     >
                                         <Text className="text-white text-xs font-bold uppercase tracking-wide">Modifier</Text>
@@ -195,6 +201,8 @@ export default function GarageProfileScreen() {
                             <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">L'Équipe</Text>
                             <TouchableOpacity
                                 onPress={() => setShowAddModal(true)}
+                                accessibilityLabel="Ajouter un membre"
+                                accessibilityRole="button"
                                 className="bg-slate-900 dark:bg-white px-5 py-3 rounded-full flex-row items-center shadow-lg shadow-slate-900/20 active:scale-[0.98]"
                             >
                                 <Plus size={18} className="text-white dark:text-slate-900 mr-2" strokeWidth={3} />
@@ -241,6 +249,8 @@ export default function GarageProfileScreen() {
                         <View className="bg-white dark:bg-slate-900 rounded-[24px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
                             <TouchableOpacity
                                 onPress={() => Linking.openURL('https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html')}
+                                accessibilityLabel="Politique de Confidentialité"
+                                accessibilityRole="link"
                                 className="p-5 border-b border-slate-100 dark:border-slate-800 flex-row justify-between items-center bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800"
                             >
                                 <Text className="text-slate-900 dark:text-white font-bold text-base">Politique de Confidentialité</Text>
@@ -248,6 +258,8 @@ export default function GarageProfileScreen() {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => Linking.openURL('https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html')}
+                                accessibilityLabel="Conditions Générales d'Utilisation"
+                                accessibilityRole="link"
                                 className="p-5 flex-row justify-between items-center bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800"
                             >
                                 <Text className="text-slate-900 dark:text-white font-bold text-base">Conditions Générales</Text>
@@ -258,6 +270,8 @@ export default function GarageProfileScreen() {
 
                     <TouchableOpacity
                         onPress={handleLogout}
+                        accessibilityLabel="Se déconnecter"
+                        accessibilityRole="button"
                         className="bg-slate-200 dark:bg-slate-800/50 h-[60px] rounded-[24px] flex-row items-center justify-center border border-slate-300 dark:border-slate-700 active:scale-[0.98] mb-4"
                     >
                         <LogOut size={20} className="text-slate-600 dark:text-slate-400 mr-3" />
@@ -289,7 +303,9 @@ export default function GarageProfileScreen() {
                                 ]
                             );
                         }}
-                        className="h-[40px] items-center justify-center mb-8"
+                        accessibilityLabel="Supprimer mon compte"
+                        accessibilityRole="button"
+                        className="h-[44px] items-center justify-center mb-8"
                     >
                         <Text className="text-red-400 font-medium text-sm">Supprimer mon compte</Text>
                     </TouchableOpacity>
@@ -338,6 +354,9 @@ export default function GarageProfileScreen() {
                                         <TouchableOpacity
                                             key={role}
                                             onPress={() => setNewUser({ ...newUser, role })}
+                                            accessibilityLabel={`Rôle ${role}`}
+                                            accessibilityRole="tab"
+                                            accessibilityState={{ selected: newUser.role === role }}
                                             className={`px-6 py-4 rounded-2xl border-2 mr-3 ${newUser.role === role ? 'bg-slate-900 border-slate-900 dark:bg-white dark:border-white' : 'bg-transparent border-slate-200 dark:border-slate-800'}`}
                                         >
                                             <Text className={`font-bold capitalize text-base ${newUser.role === role ? 'text-white dark:text-slate-900' : 'text-slate-400'}`}>{role}</Text>

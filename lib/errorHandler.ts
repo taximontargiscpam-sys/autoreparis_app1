@@ -3,8 +3,8 @@ import { Alert } from 'react-native';
 const errorLog: Array<{ timestamp: string; context: string; message: string }> = [];
 const MAX_ERROR_LOG = 50;
 
-export const handleError = (error: any, userMessage?: string) => {
-    const technicalMessage = error?.message || error?.toString() || 'Unknown error';
+export const handleError = (error: unknown, userMessage?: string) => {
+    const technicalMessage = error instanceof Error ? error.message : String(error);
     const displayMessage = userMessage
         ? userMessage
         : 'Une erreur est survenue. Veuillez réessayer.';
@@ -16,8 +16,8 @@ export const handleError = (error: any, userMessage?: string) => {
     }, 100);
 };
 
-export const logErrorSilent = (error: any, context?: string) => {
-    const message = error?.message || error?.toString() || 'Unknown';
+export const logErrorSilent = (error: unknown, context?: string) => {
+    const message = error instanceof Error ? error.message : String(error);
 
     if (__DEV__) {
         console.error(`[Error] ${context || ''}:`, error);

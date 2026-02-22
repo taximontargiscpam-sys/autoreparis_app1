@@ -9,6 +9,10 @@ jest.mock('../../lib/supabase', () => ({
 import { supabase } from '../../lib/supabase';
 
 describe('productService', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('list', () => {
     it('returns paginated products', async () => {
       mockChain._setResolved({ data: [{ id: '1', nom: 'Filtre huile' }], error: null, count: 1 });

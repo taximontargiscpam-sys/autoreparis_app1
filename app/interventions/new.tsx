@@ -64,7 +64,7 @@ export default function NewInterventionScreen() {
         }
 
         const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             quality: 0.5,
             allowsEditing: true,
         });
@@ -130,20 +130,22 @@ export default function NewInterventionScreen() {
             if (rpcError) throw rpcError;
 
             // Upload Photos after intervention is created
+            let photoUploadFailed = false;
             for (const photo of photos) {
-                const formData = new FormData();
-                formData.append('file', {
-                    uri: photo.uri,
-                    name: `photo_${Date.now()}.jpg`,
-                    type: 'image/jpeg',
-                } as any);
+                try {
+                    const response = await fetch(photo.uri);
+                    const blob = await response.blob();
 
-                const fileName = `${interventionId}/${Date.now()}.jpg`;
-                const { error: uploadError } = await supabase.storage
-                    .from('vehicle-photos')
-                    .upload(fileName, formData);
+                    const fileName = `${interventionId}/${Date.now()}.jpg`;
+                    const { error: uploadError } = await supabase.storage
+                        .from('vehicle-photos')
+                        .upload(fileName, blob, { contentType: 'image/jpeg' });
 
-                if (!uploadError) {
+                    if (uploadError) {
+                        photoUploadFailed = true;
+                        continue;
+                    }
+
                     const { data: publicUrlData } = supabase.storage.from('vehicle-photos').getPublicUrl(fileName);
                     if (publicUrlData) {
                         await supabase.from('vehicle_photos').insert([{
@@ -152,22 +154,31 @@ export default function NewInterventionScreen() {
                             type: 'etat_initial'
                         }]);
                     }
+                } catch {
+                    photoUploadFailed = true;
                 }
             }
+            if (photoUploadFailed) {
+                Alert.alert('Attention', 'Certaines photos n\'ont pas pu être téléchargées. Vous pouvez les ajouter plus tard.');
+            }
 
-            // Delete Lead after conversion
+            // Mark lead as converted instead of deleting
             if (params.lead_id) {
-                const { error: deleteLeadError } = await supabaseWebsite
+                const { error: updateLeadError } = await supabaseWebsite
                     .from('devis_auto')
-                    .delete()
+                    .update({ statut: 'converti' })
                     .eq('id', params.lead_id);
 
-                if (deleteLeadError && __DEV__) console.error("Error deleting lead:", deleteLeadError);
+                if (updateLeadError) {
+                    console.error("Error updating lead status:", updateLeadError);
+                }
             }
 
             // Invalidate React Query caches so lists & dashboard update
             qc.invalidateQueries({ queryKey: ['interventions'] });
+            qc.invalidateQueries({ queryKey: ['interventions-infinite'] });
             qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            qc.invalidateQueries({ queryKey: ['leads'] });
 
             Alert.alert('Succès', 'Intervention planifiée avec succès !');
             router.back();

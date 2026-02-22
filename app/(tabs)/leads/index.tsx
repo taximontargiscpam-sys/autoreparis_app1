@@ -1,3 +1,4 @@
+import ErrorState from '@/components/ErrorState';
 import type { DevisAuto } from '@/lib/database.types';
 import { useDeleteLead, useLeads } from '@/lib/hooks/useLeads';
 import { supabaseWebsite } from '@/lib/supabaseWebsite';
@@ -5,7 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Phone, Search, Trash2 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { FlatList, Linking, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Linking, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,7 +16,7 @@ export default function LeadsScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [search, setSearch] = useState('');
 
-    const { data, refetch } = useLeads(search);
+    const { data, isLoading, isError, refetch } = useLeads(search);
     const leads = data ?? [];
 
     const deleteLead = useDeleteLead();
@@ -38,7 +39,14 @@ export default function LeadsScreen() {
     };
 
     const handleArchive = (id: string) => {
-        deleteLead.mutate(id);
+        Alert.alert(
+            'Archiver',
+            'Voulez-vous archiver cette demande ?',
+            [
+                { text: 'Annuler', style: 'cancel' },
+                { text: 'Archiver', style: 'destructive', onPress: () => deleteLead.mutate(id) },
+            ]
+        );
     };
 
     const getStatusInfo = (status: string | null) => {
@@ -52,10 +60,12 @@ export default function LeadsScreen() {
     };
 
 
-    const renderRightActions = (_progress: any, _dragX: any, id: string) => {
+    const renderRightActions = (_progress: unknown, _dragX: unknown, id: string) => {
         return (
             <TouchableOpacity
                 onPress={() => handleArchive(id)}
+                accessibilityLabel="Archiver la demande"
+                accessibilityRole="button"
                 className="bg-red-500 justify-center items-center w-20 mb-4 rounded-r-2xl"
             >
                 <Trash2 size={24} color="white" />
@@ -66,10 +76,10 @@ export default function LeadsScreen() {
     const renderItem = ({ item }: { item: DevisAuto }) => {
         const statusInfo = getStatusInfo(item.statut || 'nouveau');
         // Map fields that might be French or English
-        const firstName = item.prenom || (item as any).prénom || 'Prospect';
+        const firstName = item.prenom || item.prénom || 'Prospect';
         const lastName = item.nom || '';
-        const msg = item.message || (item as any).description || 'Pas de message';
-        const date = item.created_at || (item as any).cree_a || (item as any).date || new Date().toISOString();
+        const msg = item.message || item.description || 'Pas de message';
+        const date = item.created_at || item.cree_a || new Date().toISOString();
 
         return (
             <Swipeable renderRightActions={(p, d) => renderRightActions(p, d, item.id)}>
@@ -77,6 +87,8 @@ export default function LeadsScreen() {
                     <Link href={`/(tabs)/leads/${item.id}`} asChild>
                         <TouchableOpacity
                             activeOpacity={0.9}
+                            accessibilityLabel={`Demande de ${firstName} ${lastName}, statut ${statusInfo.text}`}
+                            accessibilityRole="button"
                             className="p-5"
                         >
                             {/* Header: Name + Status */}
@@ -111,7 +123,9 @@ export default function LeadsScreen() {
 
                             {/* Actions */}
                             <TouchableOpacity
-                                onPress={() => handleCall(item.telephone || (item as any).tel)}
+                                onPress={() => handleCall(item.telephone || item.tel || '')}
+                                accessibilityLabel={`Appeler ${firstName} ${lastName}`}
+                                accessibilityRole="button"
                                 className="bg-emerald-500 h-14 rounded-full flex-row items-center justify-center shadow-lg shadow-emerald-500/20 active:scale-[0.98]"
                             >
                                 <Phone size={20} color="white" className="mr-3" />
@@ -142,19 +156,27 @@ export default function LeadsScreen() {
                 </View>
             </View>
 
-            <FlatList
-                data={leads}
-                keyExtractor={item => item.id}
-                renderItem={renderItem}
-                contentContainerStyle={{ padding: 24, paddingTop: 10 }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); refetch().finally(() => setRefreshing(false)); }} />}
-                ListEmptyComponent={
-                    <View className="items-center justify-center py-20 opacity-50">
-                        <Search size={48} color="#94a3b8" />
-                        <Text className="text-slate-400 mt-4 text-lg font-medium">Aucune demande trouvée</Text>
-                    </View>
-                }
-            />
+            {isLoading && !refreshing ? (
+                <View className="flex-1 justify-center items-center">
+                    <ActivityIndicator size="large" color="#3b82f6" />
+                </View>
+            ) : isError ? (
+                <ErrorState onRetry={() => refetch()} />
+            ) : (
+                <FlatList
+                    data={leads}
+                    keyExtractor={item => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={{ padding: 24, paddingTop: 10 }}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); refetch().finally(() => setRefreshing(false)); }} />}
+                    ListEmptyComponent={
+                        <View className="items-center justify-center py-20 opacity-50">
+                            <Search size={48} color="#94a3b8" />
+                            <Text className="text-slate-500 mt-4 text-lg font-medium">Aucune demande trouvée</Text>
+                        </View>
+                    }
+                />
+            )}
         </SafeAreaView>
     );
 }

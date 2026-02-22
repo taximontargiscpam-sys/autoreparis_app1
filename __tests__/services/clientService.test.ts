@@ -9,6 +9,10 @@ jest.mock('../../lib/supabase', () => ({
 import { supabase } from '../../lib/supabase';
 
 describe('clientService', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('list', () => {
     it('returns paginated clients', async () => {
       mockChain._setResolved({

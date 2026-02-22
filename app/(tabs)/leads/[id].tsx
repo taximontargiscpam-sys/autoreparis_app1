@@ -14,7 +14,7 @@ export default function LeadDetailScreen() {
     const { data: lead, isLoading } = useLead(id);
 
     const handleCall = () => {
-        const phone = lead?.telephone || (lead as any)?.tel;
+        const phone = lead?.telephone || lead?.tel;
         if (phone) Linking.openURL(`tel:${phone}`);
     };
 
@@ -44,7 +44,7 @@ export default function LeadDetailScreen() {
     );
 
     // Helper to render a field if it exists
-    const Field = ({ icon: Icon, label, value, isLink = false, action }: any) => {
+    const Field = ({ icon: Icon, label, value, isLink = false, action }: { icon: React.ComponentType<{ size: number; className?: string }>; label: string; value: string | null | undefined; isLink?: boolean; action?: () => void }) => {
         if (!value) return null;
         return (
             <TouchableOpacity
@@ -74,9 +74,9 @@ export default function LeadDetailScreen() {
         }
     };
 
-    const firstName = lead.prenom || (lead as any).prénom || 'N/A';
+    const firstName = lead.prenom || lead.prénom || 'N/A';
     const lastName = lead.nom || 'N/A';
-    const date = formatDateSafe(lead.created_at || (lead as any).cree_a, "d MMMM yyyy 'à' HH:mm");
+    const date = formatDateSafe(lead.created_at || lead.cree_a, "d MMMM yyyy 'à' HH:mm");
 
     return (
         <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
@@ -101,25 +101,25 @@ export default function LeadDetailScreen() {
                     {/* Main Info */}
                     <View className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-5 mb-6">
                         <Text className="text-lg font-bold text-slate-900 dark:text-white mb-4">Coordonnées</Text>
-                        <Field icon={Phone} label="Téléphone" value={lead.telephone || (lead as any).tel} isLink action={handleCall} />
+                        <Field icon={Phone} label="Téléphone" value={lead.telephone || lead.tel} isLink action={handleCall} />
                         <Field icon={Mail} label="Email" value={lead.email} isLink action={handleEmail} />
-                        <Field icon={MapPin} label="Adresse" value={(lead as any).code_postal ? `${(lead as any).code_postal} ${(lead as any).ville || ''}` : (lead as any).adresse} />
+                        <Field icon={MapPin} label="Adresse" value={lead.code_postal ? `${lead.code_postal} ${lead.ville || ''}` : lead.adresse} />
                     </View>
 
                     {/* Request Details */}
                     <View className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-5 mb-6">
                         <Text className="text-lg font-bold text-slate-900 dark:text-white mb-4">Demande</Text>
-                        <Field icon={Car} label="Véhicule" value={lead.vehicle_model || ((lead as any).marque ? `${(lead as any).marque} ${(lead as any).modele}`.trim() : 'Non spécifié')} />
-                        {(lead as any).annee && <Field icon={Calendar} label="Année" value={String((lead as any).annee)} />}
-                        <Field icon={FileText} label="Immatriculation" value={(lead as any).immatriculation || (lead as any).plaque} />
+                        <Field icon={Car} label="Véhicule" value={lead.vehicle_model || (lead.marque ? `${lead.marque} ${lead.modele || ''}`.trim() : 'Non spécifié')} />
+                        {lead.annee && <Field icon={Calendar} label="Année" value={String(lead.annee)} />}
+                        <Field icon={FileText} label="Immatriculation" value={lead.immatriculation || lead.plaque} />
 
-                        {(lead as any).service_souhaite && <Field icon={Wrench} label="Service souhaité" value={(lead as any).service_souhaite} />}
-                        {(lead as any).date_souhaitee && <Field icon={Calendar} label="Date souhaitée" value={formatDateSafe((lead as any).date_souhaitee, "d MMMM yyyy")} />}
+                        {lead.service_souhaite && <Field icon={Wrench} label="Service souhaité" value={lead.service_souhaite} />}
+                        {lead.date_souhaitee && <Field icon={Calendar} label="Date souhaitée" value={formatDateSafe(lead.date_souhaitee, "d MMMM yyyy")} />}
 
                         <View className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
                             <Text className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Message du client</Text>
                             <Text className="text-slate-800 dark:text-slate-200 text-base leading-7 italic">
-                                "{lead.message || (lead as any).description || 'Aucun message'}"
+                                "{lead.message || lead.description || 'Aucun message'}"
                             </Text>
                         </View>
                     </View>
@@ -145,12 +145,12 @@ export default function LeadDetailScreen() {
                                     lead_id: lead.id,
                                     nom: lead.nom || '',
                                     prenom: lead.prenom || '',
-                                    telephone: lead.telephone || (lead as any).tel || '',
+                                    telephone: lead.telephone || lead.tel || '',
                                     email: lead.email || '',
-                                    marque: (lead as any).marque || '',
-                                    modele: (lead as any).modele || lead.vehicle_model || '',
-                                    immatriculation: (lead as any).immatriculation || (lead as any).plaque || '',
-                                    commentaire: lead.message || (lead as any).description || ''
+                                    marque: lead.marque || '',
+                                    modele: lead.modele || lead.vehicle_model || '',
+                                    immatriculation: lead.immatriculation || lead.plaque || '',
+                                    commentaire: lead.message || lead.description || ''
                                 }
                             }}
                             asChild

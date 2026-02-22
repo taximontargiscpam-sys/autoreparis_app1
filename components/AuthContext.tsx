@@ -30,16 +30,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [userRole, setUserRole] = useState<UserRole | null>(null);
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             setSession(session);
-            fetchUserRole(session?.user);
+            await fetchUserRole(session?.user);
             setSessionLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (_event, session) => {
+            async (_event, session) => {
                 setSession(session);
-                fetchUserRole(session?.user);
+                await fetchUserRole(session?.user);
                 setSessionLoading(false);
             }
         );
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const fetchUserRole = async (user: User | undefined) => {
+    const fetchUserRole = async (user: User | undefined, retries = 2): Promise<void> => {
         if (!user) {
             setIsAdmin(false);
             setUserRole(null);
@@ -62,6 +62,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 .single();
 
             if (error || !data) {
+                if (retries > 0) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    return fetchUserRole(user, retries - 1);
+                }
                 setIsAdmin(false);
                 setUserRole('lecture');
                 return;
@@ -71,6 +75,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUserRole(role);
             setIsAdmin(role === 'admin');
         } catch {
+            if (retries > 0) {
+                await new Promise(r => setTimeout(r, 1000));
+                return fetchUserRole(user, retries - 1);
+            }
             setIsAdmin(false);
             setUserRole('lecture');
         }
