@@ -65,11 +65,11 @@ export default function CameraScreen() {
                 product: { ...product, stock_actuel: newStock },
             });
 
-            Alert.alert("Succes", "+1 ajoute au stock !", [
+            Alert.alert("Succès", "+1 ajouté au stock !", [
                 { text: "OK", onPress: handleReset }
             ]);
         } catch {
-            Alert.alert("Erreur", "Mise a jour echouee");
+            Alert.alert("Erreur", "Mise à jour échouée");
         }
     };
 

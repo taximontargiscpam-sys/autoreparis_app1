@@ -60,14 +60,14 @@ export const interventionService = {
   async assignMechanic(interventionId: string, mecanicienId: string) {
     const { error } = await supabase
       .from('interventions')
-      .update({ mecanicien_id: mecanicienId, statut: 'planifiee' as InterventionStatus })
+      .update({ mecanicien_id: mecanicienId })
       .eq('id', interventionId);
     if (error) throw error;
   },
 
   async getDashboardStats() {
     const [interventions, stock, leads, revenue] = await Promise.all([
-      supabase.from('interventions').select('*', { count: 'exact', head: true }).neq('statut', 'terminee'),
+      supabase.from('interventions').select('*', { count: 'exact', head: true }).in('statut', ['planifiee', 'en_cours', 'en_attente_pieces']),
       supabase.from('products').select('*', { count: 'exact', head: true }).lt('stock_actuel', 5),
       supabaseWebsite.from('devis_auto').select('*', { count: 'exact', head: true }).eq('statut', 'nouveau'),
       (() => {

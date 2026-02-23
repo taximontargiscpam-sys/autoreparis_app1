@@ -71,7 +71,6 @@ export default function PlanningScreen() {
     const [selectedAppointment, setSelectedAppointment] = useState<InterventionWithRelations | null>(null);
 
     // Helpers
-    // Helpers
     const getStatusColorBg = (status: string) => {
         switch (status) {
             case 'planifiee': return 'bg-indigo-100';
@@ -122,7 +121,7 @@ export default function PlanningScreen() {
             if (exists) {
                 return prev.map(r => r.date === dateStr ? { ...r, statut: newStatus, _modified: true } : r);
             } else {
-                return [...prev, { id: 'local-' + Math.random(), user_id: selectedUser.id, date: dateStr, statut: newStatus, commentaire: null, _modified: true }];
+                return [...prev, { id: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`, user_id: selectedUser.id, date: dateStr, statut: newStatus, commentaire: null, _modified: true }];
             }
         });
     };

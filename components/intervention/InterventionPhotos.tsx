@@ -202,7 +202,7 @@ export default function InterventionPhotos({ intervention }: InterventionPhotosP
                                 <Trash2 size={14} color="white" />
                             </TouchableOpacity>
                             <Text className="text-slate-500 text-xs mt-2 text-center" numberOfLines={1}>
-                                {new Date(photo.created_at).toLocaleTimeString()}
+                                {new Date(photo.created_at).toLocaleTimeString('fr-FR')}
                             </Text>
                         </View>
                     ))}

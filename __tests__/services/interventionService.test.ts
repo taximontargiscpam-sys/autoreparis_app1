@@ -83,14 +83,13 @@ describe('interventionService', () => {
   });
 
   describe('assignMechanic', () => {
-    it('assigns mechanic and sets planifiee', async () => {
+    it('assigns mechanic without overriding current status', async () => {
       mockChain._setResolved({ error: null });
 
       await interventionService.assignMechanic('int-1', 'meca-1');
 
       expect(mockChain.update).toHaveBeenCalledWith({
         mecanicien_id: 'meca-1',
-        statut: 'planifiee',
       });
     });
   });
