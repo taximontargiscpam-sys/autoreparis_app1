@@ -4,6 +4,7 @@ import { handleError } from '@/lib/errorHandler';
 import { useCreateTeamMember, useDeleteTeamMember, useTeamMembers } from '@/lib/hooks/useTeam';
 import { supabase } from '@/lib/supabase';
 import { getValidationError, passwordSchema, teamMemberSchema } from '@/lib/validations';
+import { GARAGE } from '@/constants/garage';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Building2, Lock, LogOut, Mail, Plus, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
@@ -248,7 +249,7 @@ export default function GarageProfileScreen() {
                         <Text className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-3 ml-2">Informations Légales</Text>
                         <View className="bg-white dark:bg-slate-900 rounded-[24px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
                             <TouchableOpacity
-                                onPress={() => Linking.openURL('https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html')}
+                                onPress={() => Linking.openURL(GARAGE.urlPolitiqueConfidentialite)}
                                 accessibilityLabel="Politique de Confidentialité"
                                 accessibilityRole="link"
                                 className="p-5 border-b border-slate-100 dark:border-slate-800 flex-row justify-between items-center bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800"
@@ -257,7 +258,7 @@ export default function GarageProfileScreen() {
                                 <ArrowLeft size={16} className="text-slate-400 rotate-180" />
                             </TouchableOpacity>
                             <TouchableOpacity
-                                onPress={() => Linking.openURL('https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html')}
+                                onPress={() => Linking.openURL(GARAGE.urlConditionsUtilisation)}
                                 accessibilityLabel="Conditions Générales d'Utilisation"
                                 accessibilityRole="link"
                                 className="p-5 flex-row justify-between items-center bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800"

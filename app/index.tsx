@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { ArrowRight, Car, Lock, MapPin, Phone, ShieldCheck, Wrench } from 'lucide-react-native';
 import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GARAGE } from '../constants/garage';
 
 export default function PublicHomeScreen() {
     const router = useRouter();
@@ -107,23 +108,23 @@ export default function PublicHomeScreen() {
                     <View className="px-6 mt-8 mb-8">
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            onPress={() => Linking.openURL('tel:0974999957')}
+                            onPress={() => Linking.openURL(`tel:${GARAGE.telephone}`)}
                             className="bg-slate-900 rounded-2xl p-5 flex-row items-center border border-slate-800"
                             accessibilityLabel="Appeler AutoReparis"
-                            accessibilityHint="Compose le 09 74 99 99 57"
+                            accessibilityHint={`Compose le ${GARAGE.telephoneDisplay}`}
                         >
                             <View className="w-10 h-10 bg-slate-800 rounded-full items-center justify-center mr-4">
                                 <Phone size={20} color="#94a3b8" />
                             </View>
                             <View className="flex-1">
                                 <Text className="text-white font-bold">Besoin d'un rendez-vous ?</Text>
-                                <Text className="text-slate-400 text-sm">Appelez-nous au 09 74 99 99 57</Text>
+                                <Text className="text-slate-400 text-sm">Appelez-nous au {GARAGE.telephoneDisplay}</Text>
                             </View>
                             <ArrowRight size={16} color="#475569" />
                         </TouchableOpacity>
                         <View className="mt-4 flex-row items-center justify-center">
                             <MapPin size={14} color="#64748b" className="mr-1" />
-                            <Text className="text-slate-500 text-xs">35 Rue du Bon Houdart, 93700 Drancy</Text>
+                            <Text className="text-slate-500 text-xs">{GARAGE.adresse}</Text>
                         </View>
                     </View>
 
@@ -137,11 +138,11 @@ export default function PublicHomeScreen() {
 
                     {/* Legal Links - Required by Apple */}
                     <View className="flex-row justify-center items-center mb-6 gap-4">
-                        <TouchableOpacity onPress={() => Linking.openURL('https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html')}>
+                        <TouchableOpacity onPress={() => Linking.openURL(GARAGE.urlPolitiqueConfidentialite)}>
                             <Text className="text-slate-600 text-[10px] underline">Politique de confidentialité</Text>
                         </TouchableOpacity>
                         <Text className="text-slate-700 text-[10px]">•</Text>
-                        <TouchableOpacity onPress={() => Linking.openURL('https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html')}>
+                        <TouchableOpacity onPress={() => Linking.openURL(GARAGE.urlConditionsUtilisation)}>
                             <Text className="text-slate-600 text-[10px] underline">Conditions d'utilisation</Text>
                         </TouchableOpacity>
                     </View>
