@@ -36,7 +36,7 @@
 | TypeScript | 0 erreurs (`npx tsc --noEmit`) |
 | Tests | 83/83 passent (`npx jest`) |
 | Branche de travail | `claude/app-store-publication-MqW9f` |
-| Dernier commit | `0cefda5` — "chore: finalize App Store deployment preparation" |
+| Dernier commit | `dfb3f55` — "docs: add PRD, SOP, PRICING and update CLAUDE.md for Antigravity" |
 | Working tree | Propre |
 
 ---
@@ -130,6 +130,9 @@ eas metadata:push  # pousse store.config.json
 | `eas.json` | Configuration EAS Build + Submit (Team ID, App ID, profiles) |
 | `store.config.json` | Metadonnees App Store (description, mots-cles, categories) |
 | `constants/garage.ts` | Configuration du garage (URLs legales, infos entreprise) |
+| `docs/PRD.md` | **Product Requirements Document** — vision, personas, modules, criteres de succes |
+| `docs/SOP.md` | **Standard Operating Procedure** — guide A-to-Z App Store + structure equipe agents |
+| `docs/PRICING.md` | **Analyse tarifaire** — marche 2026, recommandations, ROI garage |
 | `docs/DEPLOYMENT_CHECKLIST.md` | Guide etape par etape pour la publication |
 | `docs/AUDIT_REPORT.md` | Rapport d'audit complet avec roadmap |
 | `docs/PROD_READINESS_REPORT.md` | Rapport de production readiness (bugs, securite) |
@@ -173,6 +176,24 @@ eas metadata:push
 - Nettoyage secrets, fix deploy script, verification complete (0 erreurs TS, 83 tests)
 - Tout pousse sur `claude/app-store-publication-MqW9f`
 - **Resultat** : code pret, il reste les 7 etapes manuelles ci-dessus
+
+### Session 5 (23 fev 2026) — Documentation & Guide complet Antigravity
+- Creation de `docs/PRD.md` (Product Requirements Document)
+- Creation de `docs/SOP.md` (Standard Operating Procedure A-to-Z App Store + structure equipe agents)
+- Creation de `docs/PRICING.md` (analyse tarifaire marche 2026, recommandations -35%)
+- Mise a jour CLAUDE.md avec contexte complet sessions precedentes
+- Contexte recupere de la session Antigravity precedente (Sonnet 4.6) :
+  - Verification sante code : 0 TS errors, 83/83 tests passerent
+  - Fix eas.json : placeholders remplaces par vraies valeurs (BV2C6322V3, 6757646990)
+  - Fix profile.tsx : `catch (e: any)` -> `catch (e: unknown)` (dernier any restant)
+  - Fix DEPLOYMENT_CHECKLIST.md : iPad screenshots non requis (supportsTablet: false)
+  - Creation deploy_all_sql.sql : script SQL combine tout-en-un pour Supabase
+  - Nettoyage EXPO_TOKEN dans AUDIT_REPORT.md (secret expose supprime)
+  - Correction branche hardcodee dans deploy_appstore.sh
+  - 3 commits pousses sur `claude/app-store-publication-MqW9f`
+  - EAS login impossible (EXPO_TOKEN expire) -> build doit se faire en local sur Mac
+  - Pages legales retournent 403 -> GitHub Pages pas encore active (voir Etape 1)
+- **Resultat** : documentation complete, pret pour livraison finale
 
 ### Environnement verifie
 - Node.js v22.22.0, npm 10.9.4
