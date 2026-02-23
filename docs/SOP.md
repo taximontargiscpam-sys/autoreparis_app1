@@ -47,26 +47,25 @@ Prompt recommandé :
 
 ---
 
-### Agent 3 — Build & Submit Agent
-**Rôle** : EAS Build, Submit, Metadata. Nécessite un Mac.
+### Agent 3 — Xcode Build Agent
+**Rôle** : Build, Archive et Upload via Xcode natif. Nécessite un Mac.
 
 ```
 Prompt recommandé :
-"Prépare et lance le build iOS EAS pour AutoReparis OS :
-1. Vérifie que eas.json est correctement configuré (Apple Team ID + ASC App ID)
-2. Donne les commandes exactes dans l'ordre pour : login, credentials, build, submit
-3. Surveille les erreurs et propose des corrections si le build échoue"
+"Prépare le build iOS Xcode pour AutoReparis OS :
+1. Lance expo prebuild pour générer le projet natif iOS
+2. Guide le Signing & Capabilities dans Xcode (Team BV2C6322V3)
+3. Explique comment faire Product → Archive puis Distribute App → Upload
+4. Surveille les erreurs et propose des corrections si le build échoue"
 ```
 
-**Accès requis** : EXPO_TOKEN valide, compte Apple Developer, Mac avec Xcode
+**Accès requis** : Mac avec Xcode 16+, compte Apple Developer (Team ID: BV2C6322V3)
 
-**Commandes** :
+**Processus** :
 ```bash
-eas login
-eas credentials --platform ios
-eas build --platform ios --profile production
-eas submit --platform ios --latest
-eas metadata:push
+npx expo prebuild --platform ios --clean
+open ios/AutoReparisOs.xcworkspace
+# Puis dans Xcode : Product → Archive → Distribute App → App Store Connect → Upload
 ```
 
 ---
@@ -97,17 +96,15 @@ PHASE 1 : Infrastructure (GitHub Pages + Supabase + compte démo)
     ↓
 PHASE 2 : Santé du code (TS + tests)
     ↓
-PHASE 3 : Build iOS (EAS ~25 min)
+PHASE 3 : Build iOS via Xcode (~15 min)
     ↓
-PHASE 4 : Submit + Metadata
+PHASE 4 : App Store Connect (upload + screenshots + vérification)
     ↓
 PHASE 5 : Screenshots (simulateur Xcode)
     ↓
-PHASE 6 : App Store Connect (upload + vérification)
+PHASE 6 : Submit for Review → Attente Apple (1-3 jours)
     ↓
-PHASE 7 : Submit for Review → Attente Apple (1-3 jours)
-    ↓
-PHASE 8 : App live sur l'App Store 🎉
+PHASE 7 : App live sur l'App Store 🎉
 ```
 
 ---
@@ -121,8 +118,7 @@ PHASE 8 : App live sur l'App Store 🎉
 - [ ] Apple Developer account actif
   - Team ID : `BV2C6322V3`
   - Abonnement annuel à jour ($99/an)
-- [ ] Compte Expo.dev actif (`mk75`)
-  - Regénérer EXPO_TOKEN sur https://expo.dev/settings/access-tokens
+  - Apple ID connecté dans Xcode → Settings → Accounts
 - [ ] Accès au projet Supabase
   - Dashboard : https://supabase.com/dashboard/project/wjvqdvjtzwmusabbinnl
   - Récupérer la `service_role` key (Settings → API)
@@ -131,8 +127,7 @@ PHASE 8 : App live sur l'App Store 🎉
 **Vérification pré-requis :**
 ```bash
 node --version          # Doit afficher v20+ ou v22+
-npx eas-cli --version   # Doit afficher v7+
-xcode-select --version  # Doit fonctionner
+xcode-select --version  # Doit fonctionner (affiche "xcode-select version X")
 ```
 
 ---
@@ -216,7 +211,7 @@ Si des erreurs apparaissent : ne pas continuer, corriger d'abord.
 
 ---
 
-### PHASE 3 — Build iOS (25-30 min)
+### PHASE 3 — Build iOS via Xcode (15-20 min)
 
 #### Étape 3.1 — Vérifier les dépendances
 ```bash
@@ -224,63 +219,83 @@ npm install
 npx expo install --check
 ```
 
-#### Étape 3.2 — Se connecter à Expo
+#### Étape 3.2 — Générer le projet natif iOS
 ```bash
-export EXPO_TOKEN="<ton_token_expo>"
-npx eas-cli login
-# → "Logged in as mk75"
+npx expo prebuild --platform ios --clean
 ```
+Cette commande génère le dossier `ios/` avec le projet Xcode natif.
 
-#### Étape 3.3 — Configurer les certificats iOS (première fois)
+> **Note** : Le dossier `ios/` n'est pas commité dans git (`.gitignore`). Il faut relancer
+> cette commande à chaque fois depuis un working tree propre.
+
+#### Étape 3.3 — Ouvrir dans Xcode
 ```bash
-npx eas-cli credentials --platform ios
+open ios/AutoReparisOs.xcworkspace
 ```
-Cette commande va :
-1. Demander ton Apple ID + password + code 2FA
-2. Créer/récupérer le Distribution Certificate
-3. Créer/récupérer le Provisioning Profile
-4. Les stocker sur les serveurs EAS
+⚠️ Toujours ouvrir `.xcworkspace` (pas `.xcodeproj`).
 
-#### Étape 3.4 — Lancer le build
-```bash
-npx eas-cli build --platform ios --profile production
-```
+#### Étape 3.4 — Configurer le Signing (première fois ou si expiré)
+1. Dans le panneau gauche : cliquer sur **AutoReparisOs** (icône bleue)
+2. Sélectionner **Targets → AutoReparisOs**
+3. Onglet **Signing & Capabilities**
+4. Cocher **Automatically manage signing**
+5. **Team** : sélectionner ton compte Apple (Team ID `BV2C6322V3`)
+6. **Bundle Identifier** : vérifier `com.autoreparis.os`
+7. Xcode télécharge automatiquement le Distribution Certificate et Provisioning Profile
 
-**Ce qui se passe :**
-- Upload du code vers les serveurs EAS (~2 min)
-- Build sur serveur Mac Apple Silicon (~15-20 min)
-- Génération du `.ipa` signé
-- URL de l'artifact fournie en fin de build
+#### Étape 3.5 — Archiver l'app
+1. En haut à gauche : sélectionner le scheme **AutoReparisOs**
+2. Sélectionner le device : **Any iOS Device (arm64)** ← important, pas un simulateur
+3. Menu **Product → Archive**
+4. Attendre ~5-10 min (barre de progression en bas)
+
+#### Étape 3.6 — Uploader vers App Store Connect
+1. L'**Organizer Xcode** s'ouvre automatiquement (ou Window → Organizer)
+2. Sélectionner l'archive → cliquer **Distribute App**
+3. Choisir **App Store Connect** → **Upload**
+4. Suivre l'assistant (options par défaut OK)
+5. Cliquer **Upload** → attendre ~5 min
+6. Attendre l'email Apple : _"Your submission was received"_
 
 **En cas d'erreur :**
-- `"Not logged in"` → Re-exécuter étape 3.2
-- `"Missing credentials"` → Re-exécuter étape 3.3
-- `"Bundle ID not found"` → Vérifier app.json `bundleIdentifier: "com.autoreparis.os"`
+- `"No signing certificate"` → Xcode → Settings → Accounts → ajouter ton Apple ID
+- `"Provisioning profile not found"` → Signing & Capabilities → cliquer "Manage Certificates"
+- `"Bundle ID mismatch"` → Vérifier `app.json` : `bundleIdentifier: "com.autoreparis.os"`
+- `"prebuild failed"` → `npm install` puis réessayer
+- `"Archive disabled"` (grisé) → Vérifier que device sélectionné est "Any iOS Device", pas simulateur
 - Build fail TypeScript → Re-exécuter PHASE 2
 
 ---
 
-### PHASE 4 — Submit + Metadata (10 min)
+### PHASE 4 — App Store Connect (15 min)
 
-#### Étape 4.1 — Soumettre à App Store Connect
-```bash
-npx eas-cli submit --platform ios --latest
-```
-Cette commande va :
-1. Récupérer le dernier build EAS
-2. L'uploader vers App Store Connect
-3. Afficher l'URL de suivi
+Après l'upload depuis Xcode, le build est en traitement chez Apple (~10-15 min).
 
-#### Étape 4.2 — Pousser les métadonnées
-```bash
-npx eas-cli metadata:push
-```
-Cette commande lit `store.config.json` et remplit automatiquement :
-- Description (FR + EN)
-- Mots-clés
-- Catégories (BUSINESS, PRODUCTIVITY)
-- Notes de version
-- URL politique de confidentialité
+#### Étape 4.1 — Accéder à ton app dans ASC
+1. Aller sur https://appstoreconnect.apple.com
+2. **My Apps** → **AutoReparis OS** (ASC App ID: `6757646990`)
+3. Onglet **iOS App** → sélectionner le build uploadé (il apparaît après traitement)
+
+#### Étape 4.2 — Remplir les métadonnées (copier depuis `store.config.json`)
+
+| Champ ASC | Valeur (source : `store.config.json`) |
+|-----------|--------------------------------------|
+| Nom | AutoReparis OS |
+| Sous-titre | Gestion de garage automobile |
+| Description | Voir `localizations.fr-FR.description` |
+| Mots-clés | Voir `localizations.fr-FR.keywords` |
+| Catégorie primaire | Business |
+| Catégorie secondaire | Productivity |
+| Âge minimum | 4+ |
+| Prix | Gratuit |
+| URL Politique de confidentialité | `https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html` |
+
+#### Étape 4.3 — Review Information
+- First Name : Bilel | Last Name : Younes
+- Phone : +33600000000
+- Email : amirpro@hotmail.fr
+- Demo Account : `review@autoreparis.com` / `AppleReview2026!`
+- Notes : "B2B app for Auto Reparis garage in Drancy, France. Login required — use demo credentials above."
 
 ---
 
@@ -289,11 +304,11 @@ Cette commande lit `store.config.json` et remplit automatiquement :
 **Device requis** : iPhone 15 Pro Max (6.7") — Résolution 1290×2796 px
 
 **Étape 5.1 — Ouvrir le simulateur**
-1. Ouvrir Xcode → menu Window → **Devices and Simulators**
+1. Dans Xcode : menu **Window → Devices and Simulators**
 2. Ou via Terminal : `open -a Simulator`
-3. Hardware → Device → iOS 18 → **iPhone 15 Pro Max**
+3. Dans le Simulateur : **File → Open Simulator → iOS 18 → iPhone 15 Pro Max**
 
-**Étape 5.2 — Lancer l'app**
+**Étape 5.2 — Lancer l'app sur le simulateur**
 ```bash
 npx expo start --ios
 ```
@@ -309,51 +324,21 @@ npx expo start --ios
 6. **Stock** — Liste produits avec quantités
 7. **Portail suivi client** — Vue publique de suivi
 
-**Capturer :** Dans le Simulateur → menu File → **Take Screenshot** (ou Cmd+S)
+**Capturer :** Dans le Simulateur → menu **File → Take Screenshot** (ou `Cmd+S`)
 Les screenshots sont sauvegardés sur le Bureau.
 
 **Format requis Apple :**
 - Format : PNG
 - Résolution : 1290×2796 px (iPhone 6.7")
 - Maximum 10 screenshots par device
-- Pas de texte marketing externe aux captures
+- Pas besoin de screenshots iPad (`supportsTablet: false`)
 
----
-
-### PHASE 6 — App Store Connect (15 min)
-
-1. Aller sur https://appstoreconnect.apple.com
-2. My Apps → **AutoReparis OS** (ASC App ID: `6757646990`)
-3. Si l'app n'apparaît pas encore : attendre 15 min après la soumission EAS
-
-**Infos à vérifier (tout est déjà dans `store.config.json`) :**
-
-| Champ | Valeur |
-|-------|--------|
-| Nom | AutoReparis OS |
-| Sous-titre | Gestion de garage automobile |
-| Catégorie primaire | Business |
-| Catégorie secondaire | Productivity |
-| Âge minimum | 4+ |
-| Prix | Gratuit (app B2B, facturation externe) |
-
-**Upload Screenshots :**
+**Upload dans ASC :**
 - iOS App → 6.7" Display → Glisser-déposer les 3-7 captures
-- Pas besoin d'iPad (supportsTablet: false)
-
-**Review Information :**
-- First Name : Bilel | Last Name : Younes
-- Phone : +33600000000
-- Email : amirpro@hotmail.fr
-- Demo Account : review@autoreparis.com / AppleReview2026!
-- Notes : "B2B app for Auto Reparis garage in Drancy, France. Login required — use demo credentials above."
-
-**Privacy Policy URL :**
-`https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html`
 
 ---
 
-### PHASE 7 — Submit for Review
+### PHASE 6 — Submit for Review
 
 1. App Store Connect → AutoReparis OS → **Submit for Review**
 2. Répondre aux questions Apple (chiffrement : Non, publicités : Non)
@@ -370,7 +355,7 @@ Les screenshots sont sauvegardés sur le Bureau.
 
 ---
 
-### PHASE 8 — Post-Publication
+### PHASE 7 — Post-Publication
 
 **Vérification immédiate (J+0) :**
 - [ ] App visible sur App Store FR (chercher "AutoReparis OS")
@@ -388,9 +373,9 @@ App Store Connect → Crashes → Crash Organizer
 **Mises à jour futures :**
 ```bash
 # Après correction de bugs ou nouvelles fonctionnalités :
-npx eas-cli build --platform ios --profile production
-npx eas-cli submit --platform ios --latest
-# Le buildNumber s'incrémente automatiquement (autoIncrement: true)
+npx expo prebuild --platform ios --clean
+# Puis dans Xcode : incrémenter le Build Number → Product → Archive → Distribute → Upload
+# Aller sur App Store Connect → sélectionner nouveau build → Submit for Review
 ```
 
 ---
@@ -399,10 +384,13 @@ npx eas-cli submit --platform ios --latest
 
 | Problème | Cause probable | Solution |
 |----------|---------------|----------|
-| `EXPO_TOKEN expired` | Token expiré | Regénérer sur expo.dev/settings/access-tokens |
 | `Pages légales 403` | GitHub Pages inactif | Suivre Étape 1.1 |
 | `Build failed - TypeScript` | Erreur TS | `npx tsc --noEmit`, corriger les erreurs |
-| `Credentials not found` | Première fois | `eas credentials --platform ios` |
+| `No signing certificate` | Apple ID non connecté | Xcode → Settings → Accounts → ajouter Apple ID |
+| `Provisioning profile not found` | Profil expiré | Xcode → Signing → "Manage Certificates" |
+| `Archive grisé (disabled)` | Mauvais device sélectionné | Sélectionner "Any iOS Device (arm64)", pas un simulateur |
+| `Bundle ID mismatch` | ID différent dans Xcode | Vérifier `app.json` : `bundleIdentifier: "com.autoreparis.os"` |
+| `prebuild failed` | Dépendances manquantes | `npm install` puis `npx expo prebuild --platform ios --clean` |
 | `Apple review rejected - missing account deletion` | Fonctionnalité absente | Déjà implémentée dans `app/profile.tsx` |
 | `Apple review rejected - privacy policy` | URL invalide | Vérifier que GitHub Pages est actif |
 | `Tests failing` | Régression | Lire les erreurs jest, corriger |
@@ -410,4 +398,4 @@ npx eas-cli submit --platform ios --latest
 
 ---
 
-*Fichiers associés : `docs/PRD.md` (vision produit), `docs/PRICING.md` (tarification), `docs/DEPLOYMENT_CHECKLIST.md` (checklist détaillée)*
+*Fichiers associés : `docs/PRD.md` (vision produit), `docs/DEPLOYMENT_CHECKLIST.md` (checklist détaillée)*

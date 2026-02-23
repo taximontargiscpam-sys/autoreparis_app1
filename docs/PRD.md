@@ -204,4 +204,4 @@ Les garages indépendants gèrent encore manuellement :
 
 ---
 
-*Fichiers associés : `docs/SOP.md` (guide publication), `docs/PRICING.md` (tarification), `docs/AUDIT_REPORT.md` (état du code)*
+*Fichiers associés : `docs/SOP.md` (guide publication), `docs/AUDIT_REPORT.md` (état du code)*

@@ -87,17 +87,18 @@
 - Role : `admin`, actif : `true`
 - Seeder des donnees de test via `scripts/seed.js`
 
-### Etape 4 : Build iOS (25 min)
+### Etape 4 : Build iOS via Xcode (15-20 min)
 ```bash
-eas login
-eas build --platform ios --profile production
-# Attendre ~20 min...
+npx expo prebuild --platform ios --clean
+open ios/AutoReparisOs.xcworkspace
+# Dans Xcode : Signing & Capabilities → Team BV2C6322V3
+# Puis : Product → Archive → Distribute App → App Store Connect → Upload
 ```
 
-### Etape 5 : Submit (5 min)
-```bash
-eas submit --platform ios --latest
-eas metadata:push  # pousse store.config.json
+### Etape 5 : App Store Connect (15 min)
+```
+→ attendre email "submission received" puis aller sur appstoreconnect.apple.com
+→ selectionner le build → remplir metadonnees depuis store.config.json → upload screenshots
 ```
 
 ### Etape 6 : Screenshots (10 min)
@@ -116,7 +117,6 @@ eas metadata:push  # pousse store.config.json
 | Probleme | Severite | Detail |
 |----------|----------|--------|
 | `.env` manquant | Bloquant pour dev local | Utiliser `.env.example` comme template avec les vraies cles Supabase |
-| EXPO_TOKEN expire | Bloquant pour EAS CLI | Regenerer sur expo.dev et configurer en variable d'environnement |
 | Pages legales 403 | Bloquant pour Apple Review | GitHub Pages pas encore active (voir Etape 1) |
 | Table `products` RLS | Securite | Trop permissive en dev — corrige par `harden_rls.sql` (a deployer, Etape 2) |
 
@@ -132,7 +132,6 @@ eas metadata:push  # pousse store.config.json
 | `constants/garage.ts` | Configuration du garage (URLs legales, infos entreprise) |
 | `docs/PRD.md` | **Product Requirements Document** — vision, personas, modules, criteres de succes |
 | `docs/SOP.md` | **Standard Operating Procedure** — guide A-to-Z App Store + structure equipe agents |
-| `docs/PRICING.md` | **Analyse tarifaire** — marche 2026, recommandations, ROI garage |
 | `docs/DEPLOYMENT_CHECKLIST.md` | Guide etape par etape pour la publication |
 | `docs/AUDIT_REPORT.md` | Rapport d'audit complet avec roadmap |
 | `docs/PROD_READINESS_REPORT.md` | Rapport de production readiness (bugs, securite) |
@@ -152,10 +151,10 @@ npx jest                  # Tests : doit retourner 83/83
 # Developement
 npx expo start            # Lancer le serveur de dev
 
-# Build & Submit (necessite eas login)
-eas build --platform ios --profile production
-eas submit --platform ios --latest
-eas metadata:push
+# Build iOS via Xcode (pas EAS)
+npx expo prebuild --platform ios --clean
+open ios/AutoReparisOs.xcworkspace
+# Puis dans Xcode : Product → Archive → Distribute App → App Store Connect → Upload
 ```
 
 ---
