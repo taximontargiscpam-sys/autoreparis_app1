@@ -296,7 +296,7 @@ export default function GarageProfileScreen() {
                                                 if (error) throw error;
                                                 await supabase.auth.signOut();
                                                 router.replace('/(auth)/login');
-                                            } catch (e: any) {
+                                            } catch (e: unknown) {
                                                 Alert.alert("Erreur", "Impossible de supprimer le compte. Veuillez réessayer ou contacter le support.");
                                             }
                                         }

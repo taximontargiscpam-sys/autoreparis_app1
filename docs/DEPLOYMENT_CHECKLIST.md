@@ -130,7 +130,7 @@ Cela upload le build vers App Store Connect via l'API key configuree.
 Apple exige des screenshots pour :
 - **iPhone 6.7"** (iPhone 15 Pro Max) — OBLIGATOIRE
 - **iPhone 6.5"** (iPhone 11 Pro Max) — optionnel si 6.7" fourni
-- **iPad Pro 12.9"** — OBLIGATOIRE car `supportsTablet: true`
+- **iPad** — NON REQUIS (`supportsTablet: false` dans app.json)
 
 ### Ecrans a capturer (5-10 screenshots par device) :
 1. **Tableau de bord** — KPI en temps reel
@@ -263,7 +263,7 @@ eas build:view [BUILD_ID]
 - [ ] EAS credentials configures
 - [ ] `eas build --platform ios --profile production` reussi
 - [ ] `eas submit --platform ios --latest` reussi
-- [ ] Screenshots uploades (iPhone 6.7" + iPad 12.9")
+- [ ] Screenshots uploades (iPhone 6.7")
 - [ ] App Store Connect rempli (description, mots-cles, prix, privacy)
 - [ ] Demo credentials renseignes dans Review Information
 - [ ] "Submit for Review" clique

@@ -49,60 +49,113 @@ Fonction exportée mais jamais utilisée nulle part.
 
 ---
 
-## ❌ Ce qui reste à faire pour publier sur l'App Store
+## ✅ Préparatifs terminés (23 février 2026)
 
-### Étape 1 : Générer les certificats iOS (MANUEL — nécessite 2FA Apple)
+### 9. Fix TypeScript `any` restant
+- `app/profile.tsx` : `catch (e: any)` → `catch (e: unknown)` dans la suppression de compte.
+
+### 10. Configuration `eas.json` submit
+- `appleTeamId` : renseigné avec `BV2C6322V3`
+- `ascAppId` : renseigné avec `6757646990`
+- Suppression des placeholders inutiles
+
+### 11. Correction screenshots iPad
+- `supportsTablet: false` dans `app.json` → pas besoin de screenshots iPad.
+- `DEPLOYMENT_CHECKLIST.md` corrigé en conséquence.
+
+### 12. Métadonnées Store complètes
+- `store.config.json` : description FR + EN, mots-clés, release notes, review details, advisory ratings — tout prêt.
+
+### 13. Vérifications finales
+- **TypeScript** : `npx tsc --noEmit` → **0 erreurs**
+- **Tests** : `npx jest` → **83 tests passés, 0 échec**
+- **Suppression de compte** : implémentée (`profile.tsx:282-311`, appelle `delete_own_account` RPC)
+- **Pages légales** : `politique-de-confidentialite.html` + `conditions-utilisation.html` dans `docs/`
+- **Privacy manifests iOS** : configurés dans `app.json` (UserDefaults, FileTimestamp, SystemBootTime, DiskSpace)
+
+---
+
+## ❌ Ce qui reste à faire (MANUEL — nécessite un Mac + identifiants Apple)
+
+### Étape 1 : Pré-requis
+- [ ] S'assurer que GitHub Pages est actif (Settings → Pages → Branch `main`, dossier `/docs`)
+- [ ] Vérifier que les URLs légales fonctionnent :
+  - https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html
+  - https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html
+- [ ] Créer le compte de démonstration dans Supabase Auth :
+  - Email : `review@autoreparis.com` / Mot de passe : `AppleReview2026!`
+  - Remplir quelques données de test (clients, interventions, produits)
+- [ ] (Optionnel) Régénérer les clés Supabase si elles ont été exposées dans l'historique Git
+
+### Étape 2 : Générer les certificats iOS (nécessite 2FA Apple)
 ```bash
-cd ~/autoreparis_app1/autoreparis_app1-2
-export EXPO_TOKEN="jfA8Sr5S2671xCuv9gHrg2PJcd4dwPEdq8UAtEis"
 eas credentials --platform ios
 ```
-Répondre :
-- Profile : **production**
-- Distribution Certificate : **Generate new**
-- Provisioning Profile : **Generate new**
+- Choisir : **production** → **Generate new** pour Distribution Certificate et Provisioning Profile
 - Fournir l'Apple ID, mot de passe, et code 2FA
 
-### Étape 2 : Lancer le build iOS production
+### Étape 3 : Lancer le build iOS production
 ```bash
-export EXPO_TOKEN="jfA8Sr5S2671xCuv9gHrg2PJcd4dwPEdq8UAtEis"
-eas build --profile production --platform ios
+eas build --platform ios --profile production
 ```
-Durée estimée : ~25 minutes sur les serveurs Expo.
 
-### Étape 3 : Soumettre à App Store Connect
+### Étape 4 : Soumettre le build à App Store Connect
 ```bash
-export EXPO_TOKEN="jfA8Sr5S2671xCuv9gHrg2PJcd4dwPEdq8UAtEis"
-eas submit --platform ios
+eas submit --platform ios --latest
 ```
-Il faudra fournir :
-- L'**Apple ID** (email du compte développeur)
-- Le **mot de passe spécifique à l'application** (générable sur https://appleid.apple.com/account/manage → Mots de passe d'app)
-- Ou un **App Store Connect API Key** (méthode recommandée)
+EAS demandera une des méthodes d'authentification :
+- **App Store Connect API Key** (recommandé) — fichier `.p8`
+- **Ou** Apple ID + mot de passe spécifique à l'application
 
-### Étape 4 : Compléter les métadonnées sur App Store Connect
-Sur https://appstoreconnect.apple.com :
-1. **Screenshots** : minimum 3 captures d'écran par taille d'appareil (iPhone 6.7", 6.1", iPad si applicable)
-2. **Description** : description de l'application en français
-3. **Catégorie** : Business / Productivity
-4. **Privacy Policy URL** : lien vers `privacy-policy.html` hébergé
-5. **Informations de contact** : nom, email, téléphone
-6. **Version** : confirmer 1.0.0
-7. **Compte de démonstration** : fournir un email/mot de passe de test pour les reviewers Apple
+### Étape 5 : Prendre les screenshots (iPhone 6.7" uniquement)
+Sur simulateur iPhone 15 Pro Max, capturer au minimum 3 écrans parmi :
+1. Tableau de bord (KPI)
+2. Liste des interventions
+3. Détail d'une intervention
+4. Planning équipe
+5. Stock / Scanner
+6. Fiche client
+7. Écran de connexion
 
-### Étape 5 : Soumettre pour review Apple
-Sur App Store Connect → cliquer "Submit for Review". Délai estimé : 24-48h.
+### Étape 6 : Compléter App Store Connect
+Sur https://appstoreconnect.apple.com → Apps → AutoReparis OS (ID: 6757646990) :
+
+**Tout est pré-rempli dans `store.config.json` — copier-coller les valeurs :**
+- Description (FR) → onglet "Prepare for Submission"
+- Mots-clés : `garage, réparation, mécanique, atelier, gestion, automobile, planning, stock, devis, voiture, carrosserie`
+- Catégories : Business + Productivity
+- Privacy Policy URL : `https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html`
+- Prix : Gratuit
+- Disponibilité : France (minimum)
+- Screenshots : uploader ceux de l'étape 5
+- Build : sélectionner le build uploadé
+- Demo Account : `review@autoreparis.com` / `AppleReview2026!`
+- Notes for reviewers : voir `store.config.json` → `reviewDetails.notes`
+
+**App Privacy** (questionnaire) :
+- Contact Info (nom, email, téléphone) → Fonctionnalité de l'app
+- Identifiers (Device ID) → Notifications push
+- Usage Data / Diagnostics → Non collecté
+- Tracking → NON
+
+### Étape 7 : Soumettre pour review Apple
+1. Dans App Store Connect → **"Submit for Review"**
+2. Encryption : **Non** (déjà configuré `ITSAppUsesNonExemptEncryption: false`)
+3. IDFA : **Non**
+4. Content Rights : **Non**
 
 ---
 
 ## ⚠️ Points d'attention pour la review Apple
 
-| Guideline | Risque | Action |
+| Guideline | Risque | Statut |
 |-----------|--------|--------|
-| 3.2 (Business) | "App is for internal use only" | L'app possède déjà une page publique (suivi véhicule + recherche). S'assurer que la page d'accueil publique est bien visible au lancement. |
-| 5.1.1(v) | Suppression de compte | Vérifier que la fonctionnalité de suppression de compte fonctionne dans `app/profile.tsx`. |
-| 2.1 (Performance) | Localisation | Tout le texte est en français, s'assurer que les métadonnées App Store sont aussi en français. |
-| 4.0 (Design) | Permissions | Les descriptions de permissions (caméra, photos, micro) sont en français dans `app.json` → OK. |
+| 3.2 (Business) | "App is for internal use only" | ✅ L'app a une page publique (suivi véhicule + recherche). |
+| 5.1.1(v) | Suppression de compte | ✅ Implémenté dans `profile.tsx` (RPC `delete_own_account`). |
+| 2.1 (Performance) | Localisation | ✅ Texte en français, métadonnées FR prêtes dans `store.config.json`. |
+| 4.0 (Design) | Permissions | ✅ Descriptions caméra/photos/micro en français dans `app.json`. |
+| 5.1.2 | Privacy manifests | ✅ Configurés dans `app.json` (4 API types déclarés). |
+| 2.5.1 | API publique | ✅ Utilise uniquement les APIs Expo/React Native standards. |
 
 ---
 
