@@ -20,7 +20,7 @@ export const vehicleSchema = z.object({
   immatriculation: z.string().min(1, "L'immatriculation est requise").max(20),
   kilometrage: z.number().int().nonnegative().optional(),
   annee: z.number().int().min(1900).max(new Date().getFullYear() + 1).optional(),
-  vin: z.string().max(17).optional(),
+  vin: z.string().regex(/^[A-HJ-NPR-Z0-9]{17}$/, 'VIN invalide (17 caractères alphanumériques, sans I/O/Q)').optional(),
 });
 
 export type VehicleFormData = z.infer<typeof vehicleSchema>;

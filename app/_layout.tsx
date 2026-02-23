@@ -81,7 +81,7 @@ function ProtectedLayout() {
 
     const subscription = supabaseWebsite
       .channel('global_leads_notifications')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'devis_auto' }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'devis_auto', filter: 'statut=eq.nouveau' }, (payload) => {
         const lead = payload.new;
         if (lead.statut === 'nouveau') {
           sendLocalNotification(
