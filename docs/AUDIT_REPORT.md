@@ -195,9 +195,10 @@ components/
 | Clé | Valeur |
 |-----|--------|
 | Compte EAS | `mk75` |
-| EXPO_TOKEN | `jfA8Sr5S2671xCuv9gHrg2PJcd4dwPEdq8UAtEis` |
+| EXPO_TOKEN | *(stocké en variable d'env, ne pas committer)* |
 | Project ID EAS | `f846f519-62ed-4987-b462-1649277411bc` |
 | Bundle ID iOS | `com.autoreparis.os` |
 | Apple Team ID | `BV2C6322V3` |
+| ASC App ID | `6757646990` |
 | Slug | `autoreparis-os` |
 | Version | `1.0.0` |

@@ -71,7 +71,7 @@ echo ""
 # ============================================================
 step "1" "Pull du code et merge dans main"
 
-FEATURE_BRANCH="claude/project-analysis-ZPLpc"
+FEATURE_BRANCH="claude/app-store-publication-MqW9f"
 
 git fetch origin "$FEATURE_BRANCH" 2>/dev/null || true
 git fetch origin main 2>/dev/null || true
