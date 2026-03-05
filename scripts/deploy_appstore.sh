@@ -317,10 +317,10 @@ else
 fi
 
 echo "  Configuration des variables d'env EAS..."
-eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://wjvqdvjtzwmusabbinnl.supabase.co" --environment production --force 2>/dev/null || true
-eas env:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqdnFkdmp0endtdXNhYmJpbm5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyODA0MDgsImV4cCI6MjA4Mjg1NjQwOH0.s9khE4mXagZNe2YgcpySdZl23DBtia35zAntt-nZK6c" --environment production --force 2>/dev/null || true
-eas env:create --name EXPO_PUBLIC_WEBSITE_SUPABASE_URL --value "https://pncgdoqbbsgstcgydtro.supabase.co" --environment production --force 2>/dev/null || true
-eas env:create --name EXPO_PUBLIC_WEBSITE_SUPABASE_ANON_KEY --value "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuY2dkb3FiYnNnc3RjZ3lkdHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MjE1MDgsImV4cCI6MjA3OTQ5NzUwOH0.meo_LJEsbGuDCzQ5anmUl9rohQ9dxCjHCqCXrsdCY7g" --environment production --force 2>/dev/null || true
+eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "$EXPO_PUBLIC_SUPABASE_URL" --environment production --force 2>/dev/null || true
+eas env:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "$EXPO_PUBLIC_SUPABASE_ANON_KEY" --environment production --force 2>/dev/null || true
+eas env:create --name EXPO_PUBLIC_WEBSITE_SUPABASE_URL --value "$EXPO_PUBLIC_WEBSITE_SUPABASE_URL" --environment production --force 2>/dev/null || true
+eas env:create --name EXPO_PUBLIC_WEBSITE_SUPABASE_ANON_KEY --value "$EXPO_PUBLIC_WEBSITE_SUPABASE_ANON_KEY" --environment production --force 2>/dev/null || true
 
 ok "Variables EAS configurees"
 

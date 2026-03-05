@@ -79,6 +79,10 @@ function ProtectedLayout() {
 
     registerForPushNotificationsAsync();
 
+    // Only subscribe to realtime if website Supabase is configured
+    const websiteUrl = process.env.EXPO_PUBLIC_WEBSITE_SUPABASE_URL;
+    if (!websiteUrl) return;
+
     const subscription = supabaseWebsite
       .channel('global_leads_notifications')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'devis_auto', filter: 'statut=eq.nouveau' }, (payload) => {

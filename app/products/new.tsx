@@ -74,8 +74,8 @@ export default function NewProductScreen() {
             Alert.alert('Succes', 'Produit cree avec succes', [
                 { text: 'OK', onPress: () => router.replace('/(tabs)/stock') }
             ]);
-        } catch (err: any) {
-            Alert.alert('Erreur', err.message);
+        } catch (err: unknown) {
+            Alert.alert('Erreur', err instanceof Error ? err.message : 'Une erreur est survenue');
         }
     };
 

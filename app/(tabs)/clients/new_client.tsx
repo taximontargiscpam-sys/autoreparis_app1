@@ -63,7 +63,7 @@ export default function NewClientScreen() {
                         ...vehicleResult.data!,
                         client_id: client.id,
                     } as any);
-                } catch (vehErr: any) {
+                } catch (vehErr: unknown) {
                     if (__DEV__) console.error("Vehicle Error:", vehErr);
                     Alert.alert('Attention', "Client cree mais impossible d'associer le vehicule.");
                 }
@@ -72,10 +72,10 @@ export default function NewClientScreen() {
             setLoading(false);
             Alert.alert('Succes', 'Client ajoute avec succes !');
             router.back();
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (__DEV__) console.error(err);
             setLoading(false);
-            Alert.alert('Erreur', "Impossible de creer le client. " + (err.message || ''));
+            Alert.alert('Erreur', "Impossible de creer le client. " + (err instanceof Error ? err.message : ''));
         }
     };
 

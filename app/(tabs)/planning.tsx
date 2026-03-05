@@ -151,7 +151,7 @@ export default function PlanningScreen() {
 
             Alert.alert("Succès", "Disponibilités mises à jour !");
             setShowUserModal(false);
-        } catch (err: any) {
+        } catch (err: unknown) {
             Alert.alert("Erreur", "Sauvegarde impossible. Veuillez réessayer ou contacter l'administrateur.");
         }
     };

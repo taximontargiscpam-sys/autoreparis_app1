@@ -30,8 +30,8 @@ export default function LoginScreen() {
             setLoading(false);
         } else {
             router.replace('/(tabs)');
+            setLoading(false);
         }
-        setLoading(false);
     }
 
     async function handleForgotPassword() {

@@ -35,7 +35,7 @@ export default function PerformanceScreen() {
     });
 
     const stats = useMemo(() => {
-        const revenue = transactions.reduce((acc: number, curr: any) => acc + (curr.total_vente || 0), 0);
+        const revenue = transactions.reduce((acc: number, curr: { total_vente?: number }) => acc + (curr.total_vente || 0), 0);
         const count = transactions.length;
         const avg = count > 0 ? revenue / count : 0;
         return {
@@ -52,8 +52,8 @@ export default function PerformanceScreen() {
         return Array.from({ length: 7 }).map((_, i) => {
             const date = addDays(startOfCurrentWeek, i);
             const dayTotal = transactions
-                .filter((item: any) => isSameDay(new Date(item.created_at), date))
-                .reduce((acc: number, curr: any) => acc + (curr.total_vente || 0), 0);
+                .filter((item: { created_at: string }) => isSameDay(new Date(item.created_at), date))
+                .reduce((acc: number, curr: { total_vente?: number }) => acc + (curr.total_vente || 0), 0);
             return {
                 day: format(date, 'EEE', { locale: fr }).replace('.', ''),
                 value: dayTotal,
@@ -65,7 +65,7 @@ export default function PerformanceScreen() {
     const maxVal = Math.max(...(weeklyData.map(d => d.value) || [0]), 1);
 
     const filteredTransactions = selectedDay
-        ? transactions.filter((t: any) => isSameDay(new Date(t.created_at), selectedDay))
+        ? transactions.filter((t: { created_at: string }) => isSameDay(new Date(t.created_at), selectedDay))
         : transactions;
 
     return (
@@ -213,7 +213,7 @@ export default function PerformanceScreen() {
                                         <Text className="text-slate-500 font-bold">Aucune activité ce jour-là</Text>
                                     </View>
                                 ) : (
-                                    filteredTransactions.map((item: any, index: number) => (
+                                    filteredTransactions.map((item, index: number) => (
                                         <Animated.View
                                             key={item.id}
                                             entering={FadeInDown.delay(600 + (index * 50)).springify()}

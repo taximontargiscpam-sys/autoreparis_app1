@@ -42,7 +42,11 @@ export default function InterventionsScreen() {
         const sections: { title: string; value: string; color: string }[] = [
             { title: 'En Cours', value: 'en_cours', color: 'text-orange-500' },
             { title: 'Planifiées', value: 'planifiee', color: 'text-blue-500' },
+            { title: 'En Attente Pièces', value: 'en_attente_pieces', color: 'text-yellow-500' },
             { title: 'Terminées', value: 'terminee', color: 'text-green-500' },
+            { title: 'Facturées', value: 'facturee', color: 'text-emerald-600' },
+            { title: 'Annulées', value: 'annulee', color: 'text-red-500' },
+            { title: 'No Show', value: 'no_show', color: 'text-slate-400' },
         ];
         const rows: SectionRow[] = [];
         for (const section of sections) {

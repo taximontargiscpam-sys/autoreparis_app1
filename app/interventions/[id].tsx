@@ -106,7 +106,7 @@ export default function InterventionDetailScreen() {
         }
     };
 
-    const TabButton = ({ id, label, icon: Icon }: any) => (
+    const TabButton = ({ id, label, icon: Icon }: { id: 'summary' | 'parts' | 'photos'; label: string; icon: React.ElementType }) => (
         <TouchableOpacity
             onPress={() => setActiveTab(id)}
             className={`flex-1 items-center justify-center py-4 border-b-2 ${activeTab === id ? 'border-blue-500' : 'border-transparent'}`}
@@ -169,7 +169,7 @@ export default function InterventionDetailScreen() {
                             </TouchableOpacity>
                         </View>
                         <ScrollView showsVerticalScrollIndicator={false}>
-                            {users.map((user: any) => (
+                            {users.map((user: { id: string; prenom: string; nom: string; statut?: string }) => (
                                 <TouchableOpacity
                                     key={user.id}
                                     onPress={() => updateMechanic(user.id)}

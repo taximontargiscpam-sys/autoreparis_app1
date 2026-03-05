@@ -39,7 +39,7 @@ export function useVehicleSearch() {
       }
 
       return interventionId;
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (__DEV__) {
         console.error('Search error:', err);
       }

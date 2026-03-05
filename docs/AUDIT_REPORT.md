@@ -54,7 +54,7 @@ Fonction exportée mais jamais utilisée nulle part.
 ### Étape 1 : Générer les certificats iOS (MANUEL — nécessite 2FA Apple)
 ```bash
 cd ~/autoreparis_app1/autoreparis_app1-2
-export EXPO_TOKEN="jfA8Sr5S2671xCuv9gHrg2PJcd4dwPEdq8UAtEis"
+export EXPO_TOKEN="$EXPO_TOKEN"  # Set via: eas secret or env var
 eas credentials --platform ios
 ```
 Répondre :
@@ -65,14 +65,14 @@ Répondre :
 
 ### Étape 2 : Lancer le build iOS production
 ```bash
-export EXPO_TOKEN="jfA8Sr5S2671xCuv9gHrg2PJcd4dwPEdq8UAtEis"
+export EXPO_TOKEN="$EXPO_TOKEN"  # Set via: eas secret or env var
 eas build --profile production --platform ios
 ```
 Durée estimée : ~25 minutes sur les serveurs Expo.
 
 ### Étape 3 : Soumettre à App Store Connect
 ```bash
-export EXPO_TOKEN="jfA8Sr5S2671xCuv9gHrg2PJcd4dwPEdq8UAtEis"
+export EXPO_TOKEN="$EXPO_TOKEN"  # Set via: eas secret or env var
 eas submit --platform ios
 ```
 Il faudra fournir :
@@ -142,7 +142,7 @@ components/
 | Clé | Valeur |
 |-----|--------|
 | Compte EAS | `mk75` |
-| EXPO_TOKEN | `jfA8Sr5S2671xCuv9gHrg2PJcd4dwPEdq8UAtEis` |
+| EXPO_TOKEN | `[REDACTED — set via EAS secrets]` |
 | Project ID EAS | `f846f519-62ed-4987-b462-1649277411bc` |
 | Bundle ID iOS | `com.autoreparis.os` |
 | Apple Team ID | `BV2C6322V3` |

@@ -55,6 +55,6 @@ export async function sendLocalNotification(title: string, body: string, data = 
             data,
             sound: true,
         },
-        trigger: null,
+        trigger: null as unknown as Notifications.NotificationTriggerInput,
     });
 }
