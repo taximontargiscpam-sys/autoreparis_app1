@@ -292,7 +292,7 @@ export default function GarageProfileScreen() {
                                         onPress: async () => {
                                             try {
                                                 if (!currentUser?.id) throw new Error("Utilisateur non trouvé");
-                                                const { error } = await supabase.rpc('delete_own_account');
+                                                const { error } = await supabase.from('users').update({ actif: false }).eq('id', currentUser.id);
                                                 if (error) throw error;
                                                 await supabase.auth.signOut();
                                                 router.replace('/(auth)/login');

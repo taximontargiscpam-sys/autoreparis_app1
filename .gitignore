@@ -46,3 +46,7 @@ coverage/
 /android
 *.zip
 credentials/
+
+# App Store screenshots (binary files)
+screenshots/*.png
+screenshots/*.jpg
