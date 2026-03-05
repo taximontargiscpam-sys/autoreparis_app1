@@ -45,3 +45,4 @@ coverage/
 /ios
 /android
 *.zip
+credentials/
