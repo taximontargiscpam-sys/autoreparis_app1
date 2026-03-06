@@ -170,7 +170,7 @@ export default function NewInterventionScreen() {
                     .eq('id', params.lead_id);
 
                 if (updateLeadError) {
-                    console.error("Error updating lead status:", updateLeadError);
+                    if (__DEV__) console.error("Error updating lead status:", updateLeadError);
                 }
             }
 
