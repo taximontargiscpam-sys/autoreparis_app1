@@ -14,7 +14,7 @@ export function useProtectedRoute() {
         const inPortalGroup = segments[0] === 'portal';
         const isTrackingPage = segments[0] === 'tracking';
         const isPublicPage = segments[0] === 'public';
-        const isHomePage = (segments.length as number) === 0 || ((segments.length as number) === 1 && segments[0] === 'index');
+        const isHomePage = (segments.length as number) === 0 || ((segments.length as number) === 1 && (segments[0] as string) === 'index');
 
         // Public routes: home, portal, tracking, public/*, auth
         const isPublicRoute = inAuthGroup || inPortalGroup || isTrackingPage || isPublicPage || isHomePage;
