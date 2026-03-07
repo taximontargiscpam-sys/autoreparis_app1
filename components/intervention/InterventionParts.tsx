@@ -19,7 +19,7 @@ export default function InterventionParts({ intervention }: InterventionPartsPro
 
     // Form State
     const [newLine, setNewLine] = useState({
-        type_ligne: 'piece' as const,
+        type_ligne: 'piece' as 'piece' | 'main_oeuvre',
         description: '',
         quantite: '1',
         prix_vente_unitaire: '',
@@ -272,9 +272,18 @@ export default function InterventionParts({ intervention }: InterventionPartsPro
 
                         <ScrollView showsVerticalScrollIndicator={false}>
                             <View className="flex-row mb-6 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                                <View className="flex-1 py-3 rounded-lg items-center bg-white dark:bg-slate-700 shadow-sm">
-                                    <Text className="font-bold text-slate-900 dark:text-white">Pièce 🔩</Text>
-                                </View>
+                                <TouchableOpacity
+                                    onPress={() => setNewLine({ ...newLine, type_ligne: 'piece' })}
+                                    className={`flex-1 py-3 rounded-lg items-center ${newLine.type_ligne === 'piece' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
+                                >
+                                    <Text className={`font-bold ${newLine.type_ligne === 'piece' ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}`}>Pièce 🔩</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => setNewLine({ ...newLine, type_ligne: 'main_oeuvre' })}
+                                    className={`flex-1 py-3 rounded-lg items-center ${newLine.type_ligne === 'main_oeuvre' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
+                                >
+                                    <Text className={`font-bold ${newLine.type_ligne === 'main_oeuvre' ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}`}>Main d'oeuvre 🔧</Text>
+                                </TouchableOpacity>
                             </View>
 
                             <View className="mb-4">

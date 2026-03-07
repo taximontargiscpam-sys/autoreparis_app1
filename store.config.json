@@ -6,34 +6,50 @@
         "title": "AutoReparis OS",
         "subtitle": "Auto repair shop management",
         "description": "AutoReparis OS is the professional workshop management app for Auto Reparis garage in Drancy, France.\n\nKey features:\n\n• Real-time dashboard — Track ongoing repairs, weekly revenue, customer requests and stock levels at a glance.\n\n• Repair management — Create, schedule and track every repair from start to finish. Assign mechanics, add parts, upload photos and manage statuses.\n\n• Connected calendar — Team scheduling with availability management (present, off, leave). Schedule appointments and assign mechanics directly.\n\n• Customer management — Customer database with linked vehicles, repair history and contact details.\n\n• Stock & Scanner — Manage your inventory by category (mechanical, bodywork, maintenance, tires, batteries). Scan barcodes to quickly add parts.\n\n• Customer tracking — Your customers can track their repair progress in real-time using their license plate number.\n\n• Web requests — Receive and manage quote requests from your website in real-time with push notifications.\n\n• Performance analytics — View your revenue over 30 days with daily breakdown.\n\nDesigned for automotive repair professionals, AutoReparis OS simplifies the daily management of your garage.",
-        "keywords": ["garage", "repair", "mechanic", "workshop", "management", "automotive", "scheduling", "stock", "quote", "car", "bodywork"],
+        "keywords": [
+          "garage",
+          "repair",
+          "mechanic",
+          "workshop",
+          "management",
+          "automotive",
+          "scheduling",
+          "stock",
+          "quote",
+          "car",
+          "bodywork"
+        ],
         "promoText": "Manage your auto repair shop like a pro. Repairs, scheduling, stock and customer tracking — all in one app.",
         "releaseNotes": "First release of AutoReparis OS.\n- Real-time KPI dashboard\n- Complete repair management\n- Connected team calendar\n- Barcode scanner for stock\n- Customer tracking by license plate\n- Push notifications for web requests",
-        "privacyPolicyUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html",
-        "termsOfServiceUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html"
+        "privacyPolicyUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html"
       },
       "fr-FR": {
         "title": "AutoReparis OS",
         "subtitle": "Gestion d'atelier automobile",
         "description": "AutoReparis OS est l'application professionnelle de gestion d'atelier pour le garage Auto Reparis à Drancy.\n\nFonctionnalités principales :\n\n• Tableau de bord temps réel — Suivez les interventions en cours, le chiffre d'affaires hebdomadaire, les demandes clients et l'état des stocks en un coup d'œil.\n\n• Gestion des interventions — Créez, planifiez et suivez chaque réparation de A à Z. Assignez un mécanicien, ajoutez des pièces, uploadez des photos et gérez les statuts.\n\n• Planning connecté — Calendrier d'équipe avec gestion des disponibilités (présent, repos, congé). Planifiez les rendez-vous et assignez les mécaniciens directement.\n\n• Gestion des clients — Base de données clients avec véhicules associés, historique des interventions et coordonnées.\n\n• Stock & Scanner — Gérez votre inventaire par catégorie (mécanique, carrosserie, entretien, pneus, batteries). Scannez les codes-barres pour ajouter rapidement des pièces.\n\n• Suivi client — Vos clients peuvent suivre l'avancement de leur réparation en temps réel via leur plaque d'immatriculation.\n\n• Demandes web — Recevez et gérez les demandes de devis provenant de votre site web en temps réel avec notifications push.\n\n• Analyses de performance — Visualisez votre chiffre d'affaires sur 30 jours avec détail quotidien.\n\nConçue pour les professionnels de la réparation automobile, AutoReparis OS simplifie la gestion quotidienne de votre garage.",
-        "keywords": ["garage", "réparation", "mécanique", "atelier", "gestion", "automobile", "planning", "stock", "devis", "voiture", "carrosserie"],
+        "keywords": [
+          "garage",
+          "réparation",
+          "mécanique",
+          "atelier",
+          "gestion",
+          "automobile",
+          "planning",
+          "stock",
+          "devis",
+          "voiture",
+          "carrosserie"
+        ],
         "promoText": "Gérez votre atelier automobile comme un pro. Interventions, planning, stocks et suivi client — tout dans une seule app.",
         "releaseNotes": "Première version de l'application AutoReparis OS.\n- Tableau de bord avec KPI en temps réel\n- Gestion complète des interventions\n- Planning d'équipe connecté\n- Scanner de codes-barres pour le stock\n- Suivi client par plaque d'immatriculation\n- Notifications push pour les demandes web",
-        "privacyPolicyUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html",
-        "termsOfServiceUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/conditions-utilisation.html"
+        "privacyPolicyUrl": "https://taximontargiscpam-sys.github.io/autoreparis_app1/politique-de-confidentialite.html"
       }
     },
-    "categories": ["BUSINESS", "PRODUCTIVITY"],
+    "categories": [
+      "BUSINESS",
+      "PRODUCTIVITY"
+    ],
     "copyright": "2026 AutoReparis",
-    "reviewDetails": {
-      "firstName": "Bilel",
-      "lastName": "Younes",
-      "phone": "+33600000000",
-      "email": "amirpro@hotmail.fr",
-      "demoUsername": "review@autoreparis.com",
-      "demoPassword": "AppleReview2026!",
-      "notes": "AutoReparis OS est une application B2B de gestion de garage automobile, réservée au personnel du garage Auto Reparis à Drancy (93). L'accès nécessite un compte.\n\nPour tester :\n1. Connectez-vous avec les identifiants de démonstration ci-dessus\n2. Le tableau de bord affiche les KPI en temps réel\n3. Naviguez via les 6 onglets en bas\n\nSuppression de compte :\n1. Depuis le tableau de bord, appuyez sur l'icône utilisateur en haut à droite\n2. Scrollez jusqu'en bas de la page Profil\n3. Appuyez sur « Supprimer mon compte » (texte rouge)\n4. Confirmez la suppression dans la boîte de dialogue"
-    },
     "advisory": {
       "alcoholTobaccoOrDrugUseOrReferences": "NONE",
       "contests": "NONE",
@@ -52,6 +68,15 @@
       "kidsAgeBand": null,
       "ageRatingOverride": "NONE",
       "koreaAgeRatingOverride": "NONE"
+    },
+    "review": {
+      "firstName": "Bilel",
+      "lastName": "Younes",
+      "phone": "+33600000000",
+      "email": "amirpro@hotmail.fr",
+      "demoUsername": "review@autoreparis.com",
+      "demoPassword": "AppleReview2026!",
+      "notes": "AutoReparis OS est une application B2B de gestion de garage automobile, réservée au personnel du garage Auto Reparis à Drancy (93). L'accès nécessite un compte.\n\nPour tester :\n1. Connectez-vous avec les identifiants de démonstration ci-dessus\n2. Le tableau de bord affiche les KPI en temps réel\n3. Naviguez via les 6 onglets en bas\n\nSuppression de compte :\n1. Depuis le tableau de bord, appuyez sur l'icône utilisateur en haut à droite\n2. Scrollez jusqu'en bas de la page Profil\n3. Appuyez sur « Supprimer mon compte » (texte rouge)\n4. Confirmez la suppression dans la boîte de dialogue"
     }
   }
 }
