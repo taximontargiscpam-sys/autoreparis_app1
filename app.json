@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0f172a"
     },
     "ios": {
       "supportsTablet": false,
@@ -23,7 +23,6 @@
         "NSCameraUsageDescription": "AutoReparis OS utilise la caméra pour scanner les codes-barres des pièces détachées et prendre des photos des véhicules en réparation.",
         "NSPhotoLibraryUsageDescription": "AutoReparis OS a besoin d'accéder à vos photos pour joindre des images existantes aux fiches d'intervention et documenter l'état des véhicules.",
         "NSPhotoLibraryAddUsageDescription": "AutoReparis OS enregistre les photos des véhicules dans votre bibliothèque pour archivage.",
-        "NSMicrophoneUsageDescription": "AutoReparis OS peut utiliser le microphone pour les enregistrements vidéo lors de la documentation des réparations.",
         "CFBundleLocalizations": [
           "fr"
         ],
@@ -41,8 +40,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -62,8 +60,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "AutoReparis OS a besoin d'accéder à vos photos pour joindre des images existantes aux fiches d'intervention.",
-          "microphonePermission": "AutoReparis OS peut utiliser le microphone pour les enregistrements vidéo."
+          "photosPermission": "AutoReparis OS a besoin d'accéder à vos photos pour joindre des images existantes aux fiches d'intervention."
         }
       ],
       [
