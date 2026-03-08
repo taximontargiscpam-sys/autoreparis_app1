@@ -9,7 +9,10 @@ export const leadService = {
       .order('created_at', { ascending: false });
 
     if (search.trim()) {
-      query = query.or(`nom.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`);
+      const sanitized = search.trim().replace(/[%_]/g, '');
+      if (sanitized) {
+        query = query.or(`nom.ilike.%${sanitized}%,email.ilike.%${sanitized}%`);
+      }
     }
 
     const { data, error } = await query;

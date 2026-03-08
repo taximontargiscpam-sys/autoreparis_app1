@@ -71,11 +71,11 @@ export default function NewProductScreen() {
                 localisation: payload.localisation ?? null,
             });
 
-            Alert.alert('Succes', 'Produit cree avec succes', [
+            Alert.alert('Succès', 'Produit créé avec succès', [
                 { text: 'OK', onPress: () => router.replace('/(tabs)/stock') }
             ]);
         } catch (err: unknown) {
-            Alert.alert('Erreur', err instanceof Error ? err.message : 'Une erreur est survenue');
+            Alert.alert('Erreur', 'Une erreur est survenue. Veuillez réessayer.');
         }
     };
 

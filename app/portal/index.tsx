@@ -36,7 +36,7 @@ export default function ClientLoginScreen() {
                             <Car size={48} color="white" />
                         </View>
                         <Text className="text-3xl font-bold text-white text-center">Suivi Atelier</Text>
-                        <Text className="text-gray-400 text-center mt-2">Suivez les reparations de votre vehicule en temps reel.</Text>
+                        <Text className="text-gray-400 text-center mt-2">Suivez les réparations de votre véhicule en temps réel.</Text>
                     </View>
 
                     <View className="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700">
@@ -63,14 +63,14 @@ export default function ClientLoginScreen() {
                             ) : (
                                 <>
                                     <Search size={22} color="white" className="mr-2" />
-                                    <Text className="text-white font-bold text-lg">Suivre mon vehicule</Text>
+                                    <Text className="text-white font-bold text-lg">Suivre mon véhicule</Text>
                                 </>
                             )}
                         </TouchableOpacity>
                     </View>
 
                     <TouchableOpacity className="mt-12 border-t border-slate-800 pt-6 w-full items-center" onPress={() => router.push('/(auth)/login')}>
-                        <Text className="text-slate-600 mb-1 text-xs">Vous etes un garage ?</Text>
+                        <Text className="text-slate-600 mb-1 text-xs">Vous êtes un garage ?</Text>
                         <Text className="text-primary font-bold">Connexion Espace Pro</Text>
                     </TouchableOpacity>
                 </View>

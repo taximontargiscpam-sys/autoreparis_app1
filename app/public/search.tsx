@@ -54,9 +54,9 @@ export default function PublicSearchScreen() {
               <View className="w-20 h-20 bg-blue-500/20 rounded-3xl items-center justify-center mb-6 border border-blue-500/50 shadow-lg shadow-blue-500/20">
                 <Search size={40} color="#3b82f6" />
               </View>
-              <Text className="text-3xl font-black text-white text-center mb-2">Suivi de Vehicule</Text>
+              <Text className="text-3xl font-black text-white text-center mb-2">Suivi de Véhicule</Text>
               <Text className="text-slate-400 text-center text-base">
-                Entrez votre plaque d'immatriculation pour voir l'avancement des reparations.
+                Entrez votre plaque d'immatriculation pour voir l'avancement des réparations.
               </Text>
             </View>
 

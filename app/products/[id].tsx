@@ -53,10 +53,10 @@ export default function ProductDetailScreen() {
             // Also invalidate local movements query
             qc.invalidateQueries({ queryKey: ['stock-movements', productId] });
 
-            Alert.alert('Succes', 'Stock mis a jour');
+            Alert.alert('Succès', 'Stock mis à jour');
             setStockAdjustment(0);
         } catch {
-            Alert.alert('Erreur', 'Impossible de mettre a jour le stock');
+            Alert.alert('Erreur', 'Impossible de mettre à jour le stock');
         }
     };
 

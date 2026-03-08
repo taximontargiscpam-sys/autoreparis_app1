@@ -76,7 +76,7 @@ function generateTimeline(data: TrackingIntervention): TimelineEvent[] {
         events.push({
             id: 'finished',
             type: 'status',
-            title: 'Reparations terminees',
+            title: 'Réparations terminées',
             date: new Date().toISOString(),
             icon: CheckCircle,
             color: 'bg-green-500',
@@ -144,7 +144,7 @@ export default function TrackingScreen() {
     if (!intervention) return (
         <SafeAreaView className="flex-1 bg-slate-900 justify-center items-center p-4">
             <Text className="text-white text-lg font-bold mb-2">Intervention introuvable</Text>
-            <Text className="text-slate-500 text-center">Impossible de charger les details de cette intervention.</Text>
+            <Text className="text-slate-500 text-center">Impossible de charger les détails de cette intervention.</Text>
             <TouchableOpacity onPress={goBack} className="mt-8 bg-slate-800 px-6 py-3 rounded-full">
                 <Text className="text-white font-bold">Retour</Text>
             </TouchableOpacity>
@@ -203,7 +203,7 @@ export default function TrackingScreen() {
                                     <View className="flex-row items-center mt-2 bg-slate-900/50 self-start px-3 py-1.5 rounded-full">
                                         <User size={12} color="#94a3b8" className="mr-2" />
                                         <Text className="text-slate-300 text-xs">
-                                            Mecanicien : {intervention.mecanicien.prenom} {intervention.mecanicien.nom}
+                                            Mécanicien : {intervention.mecanicien.prenom} {intervention.mecanicien.nom}
                                         </Text>
                                     </View>
                                 )}
@@ -214,13 +214,13 @@ export default function TrackingScreen() {
                             <View className="bg-slate-800/50 p-4 rounded-xl mb-6 border border-slate-700">
                                 <View className="flex-row items-center mb-2">
                                     <Info size={14} color="#94a3b8" className="mr-2" />
-                                    <Text className="text-slate-400 text-xs font-bold uppercase">Note du mecanicien</Text>
+                                    <Text className="text-slate-400 text-xs font-bold uppercase">Note du mécanicien</Text>
                                 </View>
                                 <Text className="text-slate-200 italic">" {intervention.commentaire} "</Text>
                             </View>
                         )}
 
-                        <Text className="text-slate-500 font-bold mb-6 uppercase text-xs tracking-wider">Dernieres Activites</Text>
+                        <Text className="text-slate-500 font-bold mb-6 uppercase text-xs tracking-wider">Dernières Activités</Text>
                         {timelineEvents.map((event, index) => {
                             const Icon = event.icon;
                             const isLast = index === timelineEvents.length - 1;
@@ -255,11 +255,11 @@ export default function TrackingScreen() {
 
                     {/* SECTION: DETAILS & BILLING */}
                     <View className="mt-8 pt-8 border-t border-slate-800">
-                        <Text className="text-slate-500 font-bold mb-6 uppercase text-xs tracking-wider">Details & Facturation</Text>
+                        <Text className="text-slate-500 font-bold mb-6 uppercase text-xs tracking-wider">Détails & Facturation</Text>
 
                         {/* Financial Summary */}
                         <View className="bg-slate-800 p-6 rounded-3xl mb-6 border border-slate-700 shadow-sm">
-                            <Text className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">Total Estime</Text>
+                            <Text className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">Total Estimé</Text>
                             <View className="flex-row items-end">
                                 <Text className="text-4xl font-black text-white">{intervention.total_ttc || '0.00'} </Text>
                                 <Text className="text-slate-500 text-lg mb-1.5 ml-2">TTC</Text>
@@ -267,7 +267,7 @@ export default function TrackingScreen() {
                         </View>
 
                         {/* Parts List */}
-                        <Text className="text-slate-400 font-bold mb-4 uppercase text-[10px] tracking-wider ml-1">Pieces ({parts.length})</Text>
+                        <Text className="text-slate-400 font-bold mb-4 uppercase text-[10px] tracking-wider ml-1">Pièces ({parts.length})</Text>
                         {parts.length > 0 ? parts.map((line) => (
                             <View key={line.id} className="bg-slate-800/50 p-4 rounded-2xl mb-3 border border-slate-800 flex-row justify-between items-center">
                                 <View className="flex-row items-center flex-1">
@@ -276,13 +276,13 @@ export default function TrackingScreen() {
                                     </View>
                                     <View className="flex-1 mr-2">
                                         <Text className="text-white font-bold text-base">{line.description}</Text>
-                                        <Text className="text-slate-500 text-xs text-slate-400">Quantite: {line.quantite}</Text>
+                                        <Text className="text-slate-500 text-xs text-slate-400">Quantité : {line.quantite}</Text>
                                     </View>
                                 </View>
                                 <Text className="text-white font-bold">{line.total_vente_ligne} €</Text>
                             </View>
                         )) : (
-                            <Text className="text-slate-600 italic mb-6 ml-1">Aucune piece listee</Text>
+                            <Text className="text-slate-600 italic mb-6 ml-1">Aucune pièce listée</Text>
                         )}
 
                         {/* Labor List */}
@@ -295,13 +295,13 @@ export default function TrackingScreen() {
                                     </View>
                                     <View className="flex-1 mr-2">
                                         <Text className="text-white font-bold text-base">{line.description}</Text>
-                                        <Text className="text-slate-500 text-xs text-slate-400">Temps passe</Text>
+                                        <Text className="text-slate-500 text-xs text-slate-400">Temps passé</Text>
                                     </View>
                                 </View>
                                 <Text className="text-white font-bold">{line.total_vente_ligne} €</Text>
                             </View>
                         )) : (
-                            <Text className="text-slate-600 italic ml-1">Aucune main d'oeuvre listee</Text>
+                            <Text className="text-slate-600 italic ml-1">Aucune main d'oeuvre listée</Text>
                         )}
                     </View>
 

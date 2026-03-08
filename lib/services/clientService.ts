@@ -15,7 +15,10 @@ export const clientService = {
       .range(from, to);
 
     if (search.trim()) {
-      query = query.or(`nom.ilike.%${search.trim()}%,prenom.ilike.%${search.trim()}%`);
+      const sanitized = search.trim().replace(/[%_]/g, '');
+      if (sanitized) {
+        query = query.or(`nom.ilike.%${sanitized}%,prenom.ilike.%${sanitized}%`);
+      }
     }
 
     const { data, error, count } = await query;

@@ -1,11 +1,203 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><title>AutoReparis - Legal</title></head>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support — AutoReparis OS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.7;
+            color: #1a1a2e;
+            background: #f8f9fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            color: #0090E7;
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 32px;
+        }
+
+        h2 {
+            color: #1a1a2e;
+            margin-top: 32px;
+            margin-bottom: 12px;
+            font-size: 20px;
+            border-bottom: 2px solid #0090E7;
+            padding-bottom: 6px;
+        }
+
+        p, li {
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        ul {
+            padding-left: 24px;
+        }
+
+        .faq-item {
+            margin-bottom: 20px;
+        }
+
+        .faq-question {
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 6px;
+        }
+
+        .faq-answer {
+            color: #444;
+        }
+
+        .contact-card {
+            background: #f0f7ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+
+        .contact-card p {
+            margin-bottom: 6px;
+        }
+
+        .legal-links {
+            margin-top: 16px;
+        }
+
+        .legal-links a {
+            color: #0090E7;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+        .legal-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
 <body>
-<h1>AutoReparis OS</h1>
-<ul>
-<li><a href="politique-de-confidentialite.html">Politique de Confidentialité</a></li>
-<li><a href="conditions-utilisation.html">Conditions Générales d'Utilisation</a></li>
-</ul>
+    <div class="container">
+        <h1>Support AutoReparis OS</h1>
+        <p class="subtitle">Application de gestion d'atelier automobile</p>
+
+        <h2>A propos de l'application</h2>
+        <p><strong>AutoReparis OS</strong> est une application professionnelle de gestion de garage automobile.
+            Elle permet de gerer les interventions, le stock de pieces detachees, le planning de l'equipe,
+            la base clients et vehicules, ainsi que les demandes de devis en temps reel.</p>
+
+        <h2>Questions frequentes</h2>
+
+        <div class="faq-item">
+            <p class="faq-question">Comment me connecter a l'application ?</p>
+            <p class="faq-answer">L'application est reservee aux employes du garage. Votre administrateur
+                vous fournit vos identifiants de connexion (email et mot de passe). Saisissez-les
+                sur l'ecran de connexion pour acceder a l'application.</p>
+        </div>
+
+        <div class="faq-item">
+            <p class="faq-question">J'ai oublie mon mot de passe, comment le reinitialiser ?</p>
+            <p class="faq-answer">Contactez votre administrateur de garage ou envoyez un email a
+                <strong>contact@autoreparis.com</strong> pour demander une reinitialisation de votre mot de passe.</p>
+        </div>
+
+        <div class="faq-item">
+            <p class="faq-question">Pourquoi l'application demande l'acces a ma camera ?</p>
+            <p class="faq-answer">La camera est utilisee pour deux fonctions : prendre des photos des vehicules
+                en reparation (documentation avant/apres intervention) et scanner les codes-barres des pieces
+                detachees pour la gestion du stock. Aucune video ou audio n'est enregistre.</p>
+        </div>
+
+        <div class="faq-item">
+            <p class="faq-question">Pourquoi l'application demande l'acces a mes photos ?</p>
+            <p class="faq-answer">L'acces a la phothotheque permet de joindre des images existantes aux fiches
+                d'intervention, par exemple des photos envoyees par le client ou des documents scannes.</p>
+        </div>
+
+        <div class="faq-item">
+            <p class="faq-question">Comment recevoir les notifications ?</p>
+            <p class="faq-answer">Lors de la premiere ouverture, l'application vous demande l'autorisation
+                d'envoyer des notifications push. Acceptez pour recevoir les alertes de nouvelles demandes de devis
+                et les mises a jour d'interventions. Vous pouvez modifier ce reglage dans les Parametres de votre
+                iPhone.</p>
+        </div>
+
+        <div class="faq-item">
+            <p class="faq-question">Les donnees sont-elles securisees ?</p>
+            <p class="faq-answer">Oui. Toutes les donnees sont stockees de maniere chiffree sur des serveurs
+                securises (Supabase) conformes au RGPD, heberges dans l'Union Europeenne. L'authentification
+                utilise le Keychain iOS pour stocker les jetons de session en toute securite.</p>
+        </div>
+
+        <h2>Suppression de compte et de donnees</h2>
+        <p>Conformement au RGPD et aux directives de l'App Store, vous pouvez demander la suppression
+            de votre compte et de toutes vos donnees personnelles associees a tout moment.</p>
+        <p>Pour ce faire :</p>
+        <ul>
+            <li>Envoyez un email a <strong>contact@autoreparis.com</strong> avec l'objet
+                "Suppression de compte"</li>
+            <li>Indiquez l'adresse email associee a votre compte</li>
+            <li>Votre compte et vos donnees seront supprimes sous 30 jours</li>
+        </ul>
+
+        <h2>Signaler un probleme</h2>
+        <p>Si vous rencontrez un bug ou un probleme technique :</p>
+        <ul>
+            <li>Decrivez le probleme rencontre</li>
+            <li>Indiquez le modele de votre iPhone et la version d'iOS</li>
+            <li>Envoyez le tout a <strong>contact@autoreparis.com</strong></li>
+        </ul>
+        <p>Nous nous engageons a repondre sous 48 heures ouvrees.</p>
+
+        <h2>Nous contacter</h2>
+        <div class="contact-card">
+            <p><strong>AutoReparis</strong></p>
+            <p>Email : <a href="mailto:contact@autoreparis.com">contact@autoreparis.com</a></p>
+            <p>Telephone : 09 74 99 99 57</p>
+            <p>Adresse : 35 Rue du Bon Houdart, 93700 Drancy, France</p>
+        </div>
+
+        <div class="legal-links">
+            <a href="politique-de-confidentialite.html">Politique de Confidentialite</a>
+            <a href="conditions-utilisation.html">Conditions Generales d'Utilisation</a>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2026 AutoReparis. Tous droits reserves.</p>
+        </div>
+    </div>
 </body>
+
 </html>

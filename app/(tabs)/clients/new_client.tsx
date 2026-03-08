@@ -65,17 +65,17 @@ export default function NewClientScreen() {
                     } as any);
                 } catch (vehErr: unknown) {
                     if (__DEV__) console.error("Vehicle Error:", vehErr);
-                    Alert.alert('Attention', "Client cree mais impossible d'associer le vehicule.");
+                    Alert.alert('Attention', "Client créé mais impossible d'associer le véhicule.");
                 }
             }
 
             setLoading(false);
-            Alert.alert('Succes', 'Client ajoute avec succes !');
+            Alert.alert('Succès', 'Client ajouté avec succès !');
             router.back();
         } catch (err: unknown) {
             if (__DEV__) console.error(err);
             setLoading(false);
-            Alert.alert('Erreur', "Impossible de creer le client. " + (err instanceof Error ? err.message : ''));
+            Alert.alert('Erreur', "Impossible de créer le client. Veuillez réessayer.");
         }
     };
 
@@ -93,7 +93,7 @@ export default function NewClientScreen() {
 
                         <View className="flex-row gap-4 mb-4">
                             <View className="flex-1">
-                                <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Prenom</Text>
+                                <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Prénom</Text>
                                 <TextInput
                                     className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white font-medium"
                                     placeholder="Jean"
@@ -125,7 +125,7 @@ export default function NewClientScreen() {
                             onChangeText={(text) => setFormData({ ...formData, email: text })}
                         />
 
-                        <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Telephone</Text>
+                        <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Téléphone</Text>
                         <TextInput
                             className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white font-medium mb-4"
                             placeholder="06 12 34 56 78"
@@ -170,7 +170,7 @@ export default function NewClientScreen() {
                             </View>
                         </View>
 
-                        <Text className="text-lg font-bold text-slate-900 dark:text-white mb-6 mt-8">Vehicule (Optionnel)</Text>
+                        <Text className="text-lg font-bold text-slate-900 dark:text-white mb-6 mt-8">Véhicule (Optionnel)</Text>
 
                         <View className="flex-row gap-4 mb-4">
                             <View className="flex-1">
@@ -184,7 +184,7 @@ export default function NewClientScreen() {
                                 />
                             </View>
                             <View className="flex-1">
-                                <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Modele</Text>
+                                <Text className="text-slate-500 text-xs font-bold uppercase mb-2">Modèle</Text>
                                 <TextInput
                                     className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white font-medium"
                                     placeholder="Clio V"
@@ -213,7 +213,7 @@ export default function NewClientScreen() {
                         className={`bg-blue-600 p-5 rounded-xl flex-row items-center justify-center shadow-lg shadow-blue-500/30 mb-10 ${loading ? 'opacity-70' : ''}`}
                     >
                         {loading ? (
-                            <Text className="text-white font-bold text-lg">Creation en cours...</Text>
+                            <Text className="text-white font-bold text-lg">Création en cours...</Text>
                         ) : (
                             <>
                                 <Save size={24} color="white" className="mr-3" />

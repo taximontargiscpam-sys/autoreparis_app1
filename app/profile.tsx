@@ -124,7 +124,7 @@ export default function GarageProfileScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         await supabase.auth.signOut();
-                        router.replace('/portal');
+                        router.replace('/');
                     }
                 }
             ]
